@@ -1,0 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@100..900&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Urbanist", sans-serif;
+  --color-primary: #00D4FF; /* Neon Cyan from palette */
+  --color-dark: #020024;    /* Deep Navy from palette */
+}
+
+@layer base {
+  html { font-family: var(--font-display); }
+
+  body {
+    background-color: #020024; /* Deep Navy */
+    color: #FFFFFF;           /* High contrast text */
+    overflow-x: hidden;
+  }
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+
