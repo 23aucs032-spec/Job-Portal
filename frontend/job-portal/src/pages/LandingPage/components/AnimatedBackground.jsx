@@ -14,16 +14,12 @@ const AnimatedBackground = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-
     const dpr = window.devicePixelRatio || 1;
     let width = window.innerWidth;
     let height = window.innerHeight;
 
     // 🧠 Auto-disable on low-end devices
-    const isLowEndDevice =
-      navigator.hardwareConcurrency &&
-      navigator.hardwareConcurrency <= 4;
-
+    const isLowEndDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
     if (isLowEndDevice) return;
 
     canvas.width = width * dpr;
@@ -52,7 +48,6 @@ const AnimatedBackground = ({
       update() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x < 0 || this.x > width) this.vx *= -1;
         if (this.y < 0 || this.y > height) this.vy *= -1;
       }
@@ -74,15 +69,12 @@ const AnimatedBackground = ({
 
     const animate = () => {
       if (!isActiveRef.current) return;
-
       ctx.fillStyle = "rgba(10,10,20,0.25)";
       ctx.fillRect(0, 0, width, height);
-
       particles.forEach((p) => {
         p.update();
         p.draw();
       });
-
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -104,10 +96,7 @@ const AnimatedBackground = ({
 
     return () => {
       cancelAnimationFrame(animationRef.current);
-      window.removeEventListener(
-        "visibilitychange",
-        handleVisibilityChange
-      );
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [hue, saturation, lightness]);
 
