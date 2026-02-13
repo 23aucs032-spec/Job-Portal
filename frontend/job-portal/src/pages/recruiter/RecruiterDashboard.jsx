@@ -9,9 +9,16 @@ const RecruiterDashboard = () => {
   const [jobs, setJobs] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/jobs")
+    const token = localStorage.getItem("token");
+
+    fetch("http://localhost:5000/api/jobs", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((res) => res.json())
-      .then((data) => setJobs(data));
+      .then((data) => setJobs(data))
+      .catch((err) => console.error("Error fetching jobs:", err));
   }, []);
 
   return (
@@ -85,9 +92,9 @@ const RecruiterDashboard = () => {
               </p>
 
               <div className="flex gap-2 flex-wrap mt-3">
-                {job.skills.map((s) => (
+                {job.skills?.map((s, index) => (
                   <span
-                    key={s}
+                    key={index}
                     className="bg-blue-600 px-2 py-1 rounded text-sm"
                   >
                     {s}
@@ -96,9 +103,9 @@ const RecruiterDashboard = () => {
               </div>
 
               <div className="flex gap-2 flex-wrap mt-2">
-                {job.perks.map((p) => (
+                {job.perks?.map((p, index) => (
                   <span
-                    key={p}
+                    key={index}
                     className="bg-green-600 px-2 py-1 rounded text-sm"
                   >
                     {p}

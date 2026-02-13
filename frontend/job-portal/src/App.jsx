@@ -19,7 +19,8 @@ import UserProfile from "./pages/JobSeeker/UserProfile";
 // Employer Pages
 import EmployerDashboard from "./pages/Employer/EmployerDashboard";
 import JobPostingForm from "./pages/recruiter/JobPostingForm";
-import ManageJobs from "./pages/Employer/ManageJobs";
+import ManageJobs from "./pages/recruiter/ManageJobs";
+import EditJob from "./pages/recruiter/EditJob"; 
 import ApplicationViewer from "./pages/Employer/ApplicationViewer";
 import EmployerProfilePage from "./pages/Employer/EmployerProfilePage";
 import RegisterStep1 from "./pages/recruiter/RegisterStep1";
@@ -94,6 +95,8 @@ const App = () => {
         <Route path="/recruiter/register-step2" element={<RegisterStep2 />} />
         <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
         <Route path="/post-job" element={<JobPostingForm />} />
+        <Route path="/edit-job/:id" element={<EditJob />} />
+
 
         {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />

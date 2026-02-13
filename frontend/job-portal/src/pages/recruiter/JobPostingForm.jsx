@@ -75,25 +75,21 @@ const PostJob = () => {
     });
   };
 
-  const handleSubmit = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/jobs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
+const handleSubmit = async () => {
+  const token = localStorage.getItem("token");
 
-      if (!res.ok) throw new Error("Failed");
+  // eslint-disable-next-line no-unused-vars
+  const res = await fetch("http://localhost:5000/api/jobs", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(form),
+  });
 
-      alert("Job Posted Successfully!");
-      navigate("/recruiter/dashboard"); 
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) {
-      alert("Error posting job");
-    }
-  };
+  navigate("/recruiter/dashboard");
+};
 
   const inputStyle =
     "w-full bg-slate-900/80 text-white border border-slate-700 p-3 rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition mb-4 backdrop-blur";
@@ -139,12 +135,20 @@ const PostJob = () => {
           </div>
 
           {jobType === "company" ? (
-            <input
-              name="companyName"
-              placeholder="Company name"
-              className={inputStyle}
-              onChange={handleChange}
-            />
+            <>
+              <input
+                name="companyName"
+                placeholder="Company name"
+                className={inputStyle}
+                onChange={handleChange}
+              />
+              <input
+                name="hiringFor"
+                placeholder="Company you're hiring for"
+                className={inputStyle}
+                onChange={handleChange}
+              />
+            </>
           ) : (
             <>
               <input

@@ -1,12 +1,79 @@
 const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const Recruiter = require("../models/Recruiter");
+
 const router = express.Router();
 
-const {
-  registerRecruiter,
-  loginRecruiter,
-} = require("../controllers/recruiterController");
+/* ================= REGISTER ================= */
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, password, companyName } = req.body;
 
-router.post("/register", registerRecruiter);
-router.post("/login", loginRecruiter);
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
+    const existing = await Recruiter.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const recruiter = await Recruiter.create({
+      name,
+      email,
+      password,
+      companyName,
+    });
+
+    const token = jwt.sign(
+      { id: recruiter._id, role: "recruiter" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(201).json({
+      message: "Registered successfully",
+      token,
+      user: recruiter,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Registration failed" });
+  }
+});
+
+/* ================= LOGIN ================= */
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const recruiter = await Recruiter.findOne({ email });
+    if (!recruiter)
+      return res.status(400).json({ message: "Invalid email" });
+
+    const isMatch = await bcrypt.compare(
+      password,
+      recruiter.password
+    );
+
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid password" });
+
+    const token = jwt.sign(
+      { id: recruiter._id, role: "recruiter" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: recruiter,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Login failed" });
+  }
+});
 
 module.exports = router;
