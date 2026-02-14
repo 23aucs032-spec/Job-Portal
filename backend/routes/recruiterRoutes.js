@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Recruiter = require("../models/Recruiter");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -73,6 +74,16 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Login failed" });
+  }
+});
+
+/* ================= PROFILE (AUTO COMPANY NAME) ================= */
+router.get("/profile", auth, async (req, res) => {
+  try {
+    const recruiter = await Recruiter.findById(req.user.id).select("-password");
+    res.json(recruiter);
+  } catch (err) {
+    res.status(500).json({ message: "Profile fetch failed" });
   }
 });
 

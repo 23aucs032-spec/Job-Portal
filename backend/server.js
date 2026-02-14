@@ -9,7 +9,7 @@ const jobRoutes = require("./routes/jobRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const dashboardRoutes = require("./routes/dashboardroutes");
 const recruiterRoutes = require("./routes/recruiterRoutes");
-
+const profileRoutes = require("./routes/profileRoutes");
 
 dotenv.config();
 
@@ -26,6 +26,7 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/recruiter", recruiterRoutes);
+app.use("/api/profile", profileRoutes);
 
 // Base Route
 app.get("/", (req, res) => {

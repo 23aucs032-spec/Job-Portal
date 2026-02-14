@@ -1,60 +1,94 @@
 const Job = require("../models/Job");
 
-exports.createJob = async (req, res) => {
+// GET ALL JOBS
+exports.getAllJobs = async (req, res) => {
+  try {
+    const jobs = await Job.find();
+    res.json(jobs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// FILTER JOBS (Naukri style)
+exports.filterJobs = async (req, res) => {
   try {
     const {
-      jobType,
-      companyName,
-      consultancyName,
-      hiringFor,
-      title,
-      minExp,
-      maxExp,
-      minSalary,
-      maxSalary,
-      skills,
-      perks,
+      experience,
+      workMode,
+      department,
+      location,
+      salary,
+      companyType,
+      roleCategory,
+      education,
+      industry,
     } = req.body;
 
-    // Basic validation
-    if (!jobType || !title) {
-      return res.status(400).json({ message: "Required fields missing" });
+    let query = {};
+
+    if (experience)
+      query.minExp = { $gte: Number(experience) };
+
+    if (workMode?.length)
+      query.workMode = { $in: workMode };
+
+    if (department?.length)
+      query.department = { $in: department };
+
+    if (location?.length)
+      query.location = { $in: location };
+
+    if (companyType?.length)
+      query.companyType = { $in: companyType };
+
+    if (roleCategory?.length)
+      query.roleCategory = { $in: roleCategory };
+
+    if (education?.length)
+      query.education = { $in: education };
+
+    if (industry?.length)
+      query.industry = { $in: industry };
+
+    // SALARY SLAB LOGIC
+    if (salary?.length) {
+      let salaryConditions = [];
+
+      salary.forEach((range) => {
+        if (range === "0-3")
+          salaryConditions.push({ maxSalary: { $lte: 300000 } });
+
+        if (range === "3-6")
+          salaryConditions.push({
+            maxSalary: { $gt: 300000, $lte: 600000 },
+          });
+
+        if (range === "6-10")
+          salaryConditions.push({
+            maxSalary: { $gt: 600000, $lte: 1000000 },
+          });
+
+        if (range === "10-15")
+          salaryConditions.push({ maxSalary: { $gt: 1000000 } });
+      });
+
+      query.$or = salaryConditions;
     }
 
-    if (jobType === "company" && !companyName) {
-      return res
-        .status(400)
-        .json({ message: "Company name is required" });
-    }
-
-    if (jobType === "consultancy" && !consultancyName) {
-      return res
-        .status(400)
-        .json({ message: "Consultancy name is required" });
-    }
-
-    const job = new Job({
-      jobType,
-      companyName,
-      consultancyName,
-      hiringFor,
-      title,
-      minExp,
-      maxExp,
-      minSalary,
-      maxSalary,
-      skills,
-      perks,
-    });
-
-    await job.save();
-
-    res.status(201).json({
-      message: "Job posted successfully",
-      job,
-    });
+    const jobs = await Job.find(query);
+    res.json(jobs);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// CREATE JOB (for testing)
+exports.createJob = async (req, res) => {
+  try {
+    const job = await Job.create(req.body);
+    res.json(job);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

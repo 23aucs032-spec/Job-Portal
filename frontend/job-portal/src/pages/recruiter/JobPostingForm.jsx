@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -30,18 +30,55 @@ const PostJob = () => {
   const [skillInput, setSkillInput] = useState("");
   const [perkInput, setPerkInput] = useState("");
 
-  const [form, setForm] = useState({
-    companyName: "",
-    consultancyName: "",
-    hiringFor: "",
-    title: "",
-    minExp: "",
-    maxExp: "",
-    minSalary: "",
-    maxSalary: "",
-    skills: [],
-    perks: [],
-  });
+const [form, setForm] = useState({
+  companyName: "",
+  consultancyName: "",
+  hiringFor: "",
+  title: "",
+  workMode: "",
+  department: "",
+  location: "",
+  companyType: "",
+  roleCategory: "",
+  education: "",
+  industry: "",
+  minExp: "",
+  maxExp: "",
+  minSalary: "",
+  maxSalary: "",
+  skills: [],
+  perks: [],
+
+  // NEW
+  jobDescription: "",
+  responsibilities: [],
+  applyBefore: "",
+  contactEmail: "",
+});
+
+
+useEffect(() => {
+  const fetchCompany = async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:5000/api/profile", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+
+    setForm((prev) => ({
+      ...prev,
+      companyName: data.user.companyName || "",
+      contactEmail: data.user.email || "",   // 🔥 AUTO EMAIL
+    }));
+  };
+
+  fetchCompany();
+}, []);
+
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -98,14 +135,14 @@ const handleSubmit = async () => {
     <>
       <AnimatedBackground />
 
-      <div className="min-h-screen flex justify-center items-center text-white px-4">
+      <div className="flex items-center justify-center min-h-screen px-4 text-white">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="bg-black/70 backdrop-blur-2xl p-10 rounded-3xl shadow-2xl w-full max-w-3xl border border-slate-800"
+          className="w-full max-w-3xl p-10 border shadow-2xl bg-black/70 backdrop-blur-2xl rounded-3xl border-slate-800"
         >
-          <h2 className="text-3xl font-bold mb-6 text-center bg-linear-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+          <h2 className="mb-6 text-3xl font-bold text-center text-transparent bg-linear-to-r from-cyan-400 to-teal-400 bg-clip-text">
             Post a Job
           </h2>
 
@@ -138,9 +175,16 @@ const handleSubmit = async () => {
             <>
               <input
                 name="companyName"
+                value={form.companyName}
                 placeholder="Company name"
                 className={inputStyle}
                 onChange={handleChange}
+              />
+              <input
+                name="contactEmail"
+                value={form.contactEmail}
+                readOnly
+                className={inputStyle + " opacity-70"}
               />
               <input
                 name="hiringFor"
@@ -151,6 +195,19 @@ const handleSubmit = async () => {
             </>
           ) : (
             <>
+              <input
+                name="companyName"
+                value={form.companyName}
+                placeholder="Company name"
+                className={inputStyle}
+                onChange={handleChange}
+              />
+              <input
+                name="contactEmail"
+                value={form.contactEmail}
+                readOnly
+                className={inputStyle + " opacity-70"}
+              />
               <input
                 name="consultancyName"
                 placeholder="Consultancy name"
@@ -173,9 +230,18 @@ const handleSubmit = async () => {
             onChange={handleChange}
           />
 
+          {/* NEW FIELDS */}
+          <input name="workMode" placeholder="Work mode (Remote / Hybrid / Onsite)" className={inputStyle} onChange={handleChange} />
+          <input name="department" placeholder="Department" className={inputStyle} onChange={handleChange} />
+          <input name="location" placeholder="Location" className={inputStyle} onChange={handleChange} />
+          <input name="companyType" placeholder="Company type (Startup / MNC / Product)" className={inputStyle} onChange={handleChange} />
+          <input name="roleCategory" placeholder="Role category" className={inputStyle} onChange={handleChange} />
+          <input name="education" placeholder="Education required" className={inputStyle} onChange={handleChange} />
+          <input name="industry" placeholder="Industry" className={inputStyle} onChange={handleChange} />
+
           {/* Skills */}
           <div className="mb-6">
-            <p className="font-semibold mb-2 text-slate-300">
+            <p className="mb-2 font-semibold text-slate-300">
               Required Skills
             </p>
 
@@ -192,23 +258,23 @@ const handleSubmit = async () => {
               }}
             />
 
-            <div className="flex gap-2 flex-wrap mb-2">
+            <div className="flex flex-wrap gap-2 mb-2">
               {skillSuggestions.map((skill) => (
                 <button
                   key={skill}
                   onClick={() => addSkill(skill)}
-                  className="text-sm px-3 py-1 border border-slate-600 rounded-xl text-slate-300 hover:bg-cyan-500 hover:text-black transition"
+                  className="px-3 py-1 text-sm transition border border-slate-600 rounded-xl text-slate-300 hover:bg-cyan-500 hover:text-black"
                 >
                   + {skill}
                 </button>
               ))}
             </div>
 
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2">
               {form.skills.map((skill) => (
                 <span
                   key={skill}
-                  className="bg-cyan-500 text-black px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                  className="flex items-center gap-2 px-3 py-1 text-sm text-black rounded-full bg-cyan-500"
                 >
                   {skill}
                   <button onClick={() => removeSkill(skill)}>✕</button>
@@ -254,7 +320,7 @@ const handleSubmit = async () => {
 
           {/* Perks */}
           <div className="mb-6">
-            <p className="font-semibold mb-2 text-slate-300">
+            <p className="mb-2 font-semibold text-slate-300">
               Perks & Benefits
             </p>
 
@@ -286,11 +352,11 @@ const handleSubmit = async () => {
               }}
             />
 
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2">
               {form.perks.map((perk) => (
                 <span
                   key={perk}
-                  className="bg-teal-500 text-black px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                  className="flex items-center gap-2 px-3 py-1 text-sm text-black bg-teal-500 rounded-full"
                 >
                   {perk}
                   <button onClick={() => removePerk(perk)}>✕</button>
@@ -299,11 +365,45 @@ const handleSubmit = async () => {
             </div>
           </div>
 
+          {/* Job Description */}
+<textarea
+  name="jobDescription"
+  placeholder="Job description"
+  rows="4"
+  className={inputStyle}
+  onChange={handleChange}
+/>
+
+{/* Responsibilities */}
+<textarea
+  placeholder="Responsibilities (one per line)"
+  rows="4"
+  className={inputStyle}
+  onChange={(e) =>
+    setForm({
+      ...form,
+      responsibilities: e.target.value.split("\n"),
+    })
+  }
+/>
+
+{/* Apply Before */}
+<input
+  type="date"
+  name="applyBefore"
+  className={inputStyle}
+  onChange={handleChange}
+/>
+
+{/* Contact Email (Read Only) */}
+
+
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleSubmit}
-            className="mt-8 w-full bg-linear-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition py-3 rounded-xl font-semibold shadow-lg text-black"
+            className="w-full py-3 mt-8 font-semibold text-black transition shadow-lg bg-linear-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 rounded-xl"
           >
             Post Job
           </motion.button>
