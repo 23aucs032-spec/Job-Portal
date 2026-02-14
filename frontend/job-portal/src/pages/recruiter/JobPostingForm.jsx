@@ -115,18 +115,32 @@ useEffect(() => {
 const handleSubmit = async () => {
   const token = localStorage.getItem("token");
 
-  // eslint-disable-next-line no-unused-vars
-  const res = await fetch("http://localhost:5000/api/jobs", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(form),
-  });
+  try {
+    const res = await fetch("http://localhost:5000/api/jobs", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(form),
+    });
 
-  navigate("/recruiter/dashboard");
+    if (!res.ok) throw new Error("Failed to post job");
+
+    // eslint-disable-next-line no-unused-vars
+    const data = await res.json();
+
+    // Optionally, show success toast here
+    alert("Job posted successfully!");
+
+    // Redirect to dashboard
+    navigate("/recruiter/dashboard");
+  } catch (err) {
+    console.error("Error posting job:", err);
+    alert("Failed to post job. Check console for details.");
+  }
 };
+
 
   const inputStyle =
     "w-full bg-slate-900/80 text-white border border-slate-700 p-3 rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition mb-4 backdrop-blur";

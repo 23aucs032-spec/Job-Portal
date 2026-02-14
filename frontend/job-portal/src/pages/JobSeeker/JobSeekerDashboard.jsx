@@ -109,15 +109,15 @@ const JobSeekerDashboard = () => {
 
       <div className="flex">
         {/* LEFT FILTER PANEL */}
-        <div className="w-1/4 bg-black/80 p-6 overflow-y-auto h-screen border-r border-gray-800">
-          <h2 className="text-2xl font-bold mb-2">All Filters</h2>
-          <p className="text-blue-400 text-sm mb-4">
+        <div className="w-1/4 h-screen p-6 overflow-y-auto border-r border-gray-800 bg-black/80">
+          <h2 className="mb-2 text-2xl font-bold">All Filters</h2>
+          <p className="mb-4 text-sm text-blue-400">
             Applied ({Object.values(filters).flat().length - 1})
           </p>
 
           {/* EXPERIENCE */}
           <div className="mb-6">
-            <h3 className="font-semibold mb-2">
+            <h3 className="mb-2 font-semibold">
               Experience: {filters.experience} Yrs
             </h3>
             <input
@@ -237,7 +237,7 @@ const JobSeekerDashboard = () => {
           <motion.h1
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-bold mb-8 text-center"
+            className="mb-8 text-4xl font-bold text-center"
           >
             Available Jobs
           </motion.h1>
@@ -249,7 +249,7 @@ const JobSeekerDashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-black/70 p-6 rounded-xl flex justify-between border border-gray-800 hover:border-blue-500"
+                className="flex justify-between p-6 border border-gray-800 bg-black/70 rounded-xl hover:border-blue-500"
               >
                 <div>
                   <h2 className="text-xl font-semibold">{job.title}</h2>
@@ -263,7 +263,7 @@ const JobSeekerDashboard = () => {
                     Salary: ₹{job.minSalary} - ₹{job.maxSalary}
                   </p>
 
-                  <button className="mt-4 bg-green-600 px-4 py-2 rounded hover:bg-green-700">
+                  <button className="px-4 py-2 mt-4 bg-green-600 rounded hover:bg-green-700">
                     Apply Now
                   </button>
                 </div>

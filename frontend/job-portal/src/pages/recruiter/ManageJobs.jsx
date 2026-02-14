@@ -24,9 +24,10 @@ const ManageJobs = () => {
         },
       });
 
-      setJobs(response.data);
+      setJobs(response.data || []); // Safety fallback
     } catch (error) {
       console.error("Fetch Jobs Error:", error);
+      setJobs([]); // fallback to empty array
     }
   };
 
@@ -58,19 +59,17 @@ const ManageJobs = () => {
       <AnimatedBackground />
 
       <div className="relative z-10 min-h-screen p-6 text-white">
-        
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Manage Jobs</h1>
-
           <button
             onClick={() => navigate("/recruiter/dashboard")}
-            className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition"
+            className="px-4 py-2 transition bg-blue-600 rounded-lg hover:bg-blue-500"
           >
             Recruiter Dashboard
           </button>
         </div>
 
-        <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+        <div className="flex flex-col max-w-3xl gap-6 mx-auto">
           <AnimatePresence>
             {jobs.map((job) => (
               <motion.div
@@ -79,34 +78,34 @@ const ManageJobs = () => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="bg-black/60 backdrop-blur-lg p-6 rounded-xl border border-gray-700 shadow-lg relative"
+                className="relative p-6 border border-gray-700 shadow-lg bg-black/60 backdrop-blur-lg rounded-xl"
               >
-                <h3 className="text-xl font-semibold mb-1">{job.title}</h3>
-                <p className="text-gray-400 mb-2">{job.companyName}</p>
+                <h3 className="mb-1 text-xl font-semibold">{job.title}</h3>
+                <p className="mb-2 text-gray-400">{job.companyName}</p>
 
                 <p className="mt-1 text-sm">
-                  <strong>Experience:</strong> {job.minExp} - {job.maxExp} yrs
+                  <strong>Experience:</strong> {job.minExp || 0} - {job.maxExp || 0} yrs
                 </p>
                 <p className="text-sm">
-                  <strong>Salary:</strong> ₹{job.minSalary} - ₹{job.maxSalary}
+                  <strong>Salary:</strong> ₹{job.minSalary || 0} - ₹{job.maxSalary || 0}
                 </p>
 
-                <div className="flex gap-2 flex-wrap mt-3">
-                  {job.skills.map((s) => (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {job.skills?.map((s) => (
                     <span
                       key={s}
-                      className="bg-blue-600 px-2 py-1 rounded text-sm"
+                      className="px-2 py-1 text-sm bg-blue-600 rounded"
                     >
                       {s}
                     </span>
                   ))}
                 </div>
 
-                <div className="flex gap-2 flex-wrap mt-2">
-                  {job.perks.map((p) => (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {job.perks?.map((p) => (
                     <span
                       key={p}
-                      className="bg-green-600 px-2 py-1 rounded text-sm"
+                      className="px-2 py-1 text-sm bg-green-600 rounded"
                     >
                       {p}
                     </span>
@@ -114,27 +113,20 @@ const ManageJobs = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <button
-                    onClick={() => setSelectedJob(job)}
-                    title="Details"
-                  >
-                    <FaInfoCircle className="text-blue-400 hover:text-blue-500 transition" />
+                <div className="absolute flex gap-2 top-4 right-4">
+                  <button onClick={() => setSelectedJob(job)} title="Details">
+                    <FaInfoCircle className="text-blue-400 transition hover:text-blue-500" />
                   </button>
 
-                  {/* ✅ EDIT NOW NAVIGATES TO EditJob PAGE */}
                   <button
                     onClick={() => navigate(`/edit-job/${job._id}`)}
                     title="Edit"
                   >
-                    <FaEdit className="text-green-400 hover:text-green-500 transition" />
+                    <FaEdit className="text-green-400 transition hover:text-green-500" />
                   </button>
 
-                  <button
-                    onClick={() => handleDelete(job._id)}
-                    title="Delete"
-                  >
-                    <FaTrash className="text-red-400 hover:text-red-500 transition" />
+                  <button onClick={() => handleDelete(job._id)} title="Delete">
+                    <FaTrash className="text-red-400 transition hover:text-red-500" />
                   </button>
                 </div>
               </motion.div>
@@ -143,7 +135,7 @@ const ManageJobs = () => {
         </div>
 
         {jobs.length === 0 && (
-          <p className="text-gray-400 mt-10 text-center">
+          <p className="mt-10 text-center text-gray-400">
             No jobs posted yet.
           </p>
         )}
@@ -155,35 +147,33 @@ const ManageJobs = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-20"
+              className="fixed inset-0 z-20 flex items-center justify-center bg-black bg-opacity-70"
             >
               <motion.div
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.8 }}
-                className="bg-black/80 p-6 rounded-lg max-w-md w-full text-white border border-gray-600 shadow-lg"
+                className="w-full max-w-md p-6 text-white border border-gray-600 rounded-lg shadow-lg bg-black/80"
               >
-                <h2 className="text-xl font-bold mb-2">
-                  {selectedJob.title}
-                </h2>
+                <h2 className="mb-2 text-xl font-bold">{selectedJob.title}</h2>
                 <p>
                   <strong>Company:</strong> {selectedJob.companyName}
                 </p>
                 <p>
-                  <strong>Experience:</strong> {selectedJob.minExp} - {selectedJob.maxExp}
+                  <strong>Experience:</strong> {selectedJob.minExp || 0} - {selectedJob.maxExp || 0}
                 </p>
                 <p>
-                  <strong>Salary:</strong> ₹{selectedJob.minSalary} - ₹{selectedJob.maxSalary}
+                  <strong>Salary:</strong> ₹{selectedJob.minSalary || 0} - ₹{selectedJob.maxSalary || 0}
                 </p>
                 <p>
-                  <strong>Skills:</strong> {selectedJob.skills.join(", ")}
+                  <strong>Skills:</strong> {selectedJob.skills?.join(", ")}
                 </p>
                 <p>
-                  <strong>Perks:</strong> {selectedJob.perks.join(", ")}
+                  <strong>Perks:</strong> {selectedJob.perks?.join(", ")}
                 </p>
 
                 <button
-                  className="px-4 py-2 bg-gray-700 rounded mt-3 hover:bg-gray-600 transition"
+                  className="px-4 py-2 mt-3 transition bg-gray-700 rounded hover:bg-gray-600"
                   onClick={() => setSelectedJob(null)}
                 >
                   Close
@@ -192,7 +182,6 @@ const ManageJobs = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
     </>
   );

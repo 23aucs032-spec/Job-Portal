@@ -1,14 +1,15 @@
 const Job = require("../models/Job");
 
 // GET ALL JOBS
-exports.getAllJobs = async (req, res) => {
+exports.getMyJobs = async (req, res) => {
   try {
-    const jobs = await Job.find();
+    const jobs = await Job.find({ postedBy: req.user.id });
     res.json(jobs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // FILTER JOBS (Naukri style)
 exports.filterJobs = async (req, res) => {
@@ -86,7 +87,10 @@ exports.filterJobs = async (req, res) => {
 // CREATE JOB (for testing)
 exports.createJob = async (req, res) => {
   try {
-    const job = await Job.create(req.body);
+    const job = await Job.create({
+      ...req.body,
+      postedBy: req.user.id, // Add this
+    });
     res.json(job);
   } catch (err) {
     res.status(500).json({ error: err.message });
