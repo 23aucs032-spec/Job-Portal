@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
 import { Bookmark, ChevronDown, ChevronUp } from "lucide-react";
 
-/* ================================
-   FILTER BLOCK (MUST BE OUTSIDE)
-================================ */
+
+// FILTER BLOCK
 const FilterBlock = ({
   title,
   stateKey,
@@ -16,37 +16,64 @@ const FilterBlock = ({
   collapse,
   toggleCollapse,
 }) => (
-  <div className="mb-5">
+  <div className="mb-6">
+
     <div
-      className="flex justify-between cursor-pointer"
+      className="flex justify-between items-center cursor-pointer mb-2"
       onClick={() => toggleCollapse(stateKey)}
     >
-      <h3 className="font-semibold">{title}</h3>
-      {collapse[stateKey] ? <ChevronUp /> : <ChevronDown />}
+      <h3 className="font-semibold text-sm text-gray-200">
+        {title}
+      </h3>
+
+      {collapse[stateKey]
+        ? <ChevronUp size={16} />
+        : <ChevronDown size={16} />}
     </div>
 
+
     {collapse[stateKey] && (
-      <div className="mt-2 space-y-2">
+
+      <div className="space-y-2">
+
         {options.map((opt) => (
-          <label key={opt} className="flex gap-2 text-sm">
+
+          <label
+            key={opt}
+            className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-white"
+          >
+
             <input
               type="checkbox"
               checked={filters[stateKey].includes(opt)}
               onChange={() => toggleFilter(stateKey, opt)}
+              className="accent-blue-500"
             />
+
             {opt}
+
           </label>
+
         ))}
+
       </div>
+
     )}
+
   </div>
 );
 
-/* ================================
-   MAIN COMPONENT
-================================ */
+
+
+
+
 const JobSeekerDashboard = () => {
+
+  const navigate = useNavigate();
+
   const [filteredJobs, setFilteredJobs] = useState([]);
+
+
 
   const [filters, setFilters] = useState({
     experience: 0,
@@ -60,7 +87,11 @@ const JobSeekerDashboard = () => {
     industry: [],
   });
 
+
+
+
   const [collapse, setCollapse] = useState({
+
     workMode: true,
     department: true,
     location: true,
@@ -69,70 +100,178 @@ const JobSeekerDashboard = () => {
     roleCategory: true,
     education: true,
     industry: true,
+
   });
 
-  // LOAD ALL JOBS
+
+
+
   useEffect(() => {
+
     fetch("http://localhost:5000/api/jobs/all")
-      .then((res) => res.json())
-      .then((data) => setFilteredJobs(data));
+      .then(res => res.json())
+      .then(data => setFilteredJobs(data));
+
   }, []);
 
-  // APPLY FILTERS
+
+
+
   useEffect(() => {
+
     fetch("http://localhost:5000/api/jobs/filter", {
+
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
       body: JSON.stringify(filters),
+
     })
-      .then((res) => res.json())
-      .then((data) => setFilteredJobs(data));
+      .then(res => res.json())
+      .then(data => setFilteredJobs(data));
+
   }, [filters]);
 
+
+
+
+
   const toggleFilter = (type, value) => {
+
     const updated = filters[type].includes(value)
-      ? filters[type].filter((v) => v !== value)
+
+      ? filters[type].filter(v => v !== value)
+
       : [...filters[type], value];
 
-    setFilters({ ...filters, [type]: updated });
+
+
+    setFilters({
+      ...filters,
+      [type]: updated,
+    });
+
   };
 
-  const toggleCollapse = (key) => {
-    setCollapse({ ...collapse, [key]: !collapse[key] });
+
+
+
+  const toggleCollapse = key => {
+
+    setCollapse({
+      ...collapse,
+      [key]: !collapse[key],
+    });
+
   };
+
+
+
+
+  const handleJobClick = id => {
+
+    navigate(`/job/${id}`);
+
+  };
+
+
+
+
+
 
   return (
+
     <div className="relative min-h-screen text-white">
+
+
+      {/* BACKGROUND */}
+
       <div className="absolute inset-0 -z-10">
         <AnimatedBackground />
       </div>
 
-      <div className="flex">
-        {/* LEFT FILTER PANEL */}
-        <div className="w-1/4 h-screen p-6 overflow-y-auto border-r border-gray-800 bg-black/80">
-          <h2 className="mb-2 text-2xl font-bold">All Filters</h2>
-          <p className="mb-4 text-sm text-blue-400">
-            Applied ({Object.values(filters).flat().length - 1})
+
+
+
+
+      {/* MAIN CONTAINER */}
+
+      <div className="flex max-w-350 mx-auto">
+
+
+
+
+        {/* SIDEBAR */}
+
+        <div className="w-72 min-h-screen border-r border-gray-800 bg-black/80 p-6">
+
+
+          <h2 className="text-xl font-bold mb-1">
+
+            All Filters
+
+          </h2>
+
+
+
+          <p className="text-blue-400 text-sm mb-5">
+
+            Applied (
+
+            {Object.values(filters).flat().length - 1}
+
+            )
+
           </p>
 
+
+
+
+
           {/* EXPERIENCE */}
-          <div className="mb-6">
-            <h3 className="mb-2 font-semibold">
+
+          <div className="mb-7">
+
+            <h3 className="font-semibold text-sm mb-2">
+
               Experience: {filters.experience} Yrs
+
             </h3>
+
+
+
             <input
               type="range"
               min="0"
               max="30"
               value={filters.experience}
               onChange={(e) =>
-                setFilters({ ...filters, experience: Number(e.target.value) })
+
+                setFilters({
+
+                  ...filters,
+
+                  experience: Number(e.target.value)
+
+                })
+
               }
-              className="w-full"
+
+              className="w-full accent-blue-500"
+
             />
+
           </div>
 
+
+
+
+
           <FilterBlock
+
             title="Work mode"
             stateKey="workMode"
             options={["office", "remote", "hybrid"]}
@@ -140,7 +279,10 @@ const JobSeekerDashboard = () => {
             toggleFilter={toggleFilter}
             collapse={collapse}
             toggleCollapse={toggleCollapse}
+
           />
+
+
 
           <FilterBlock
             title="Department"
@@ -152,6 +294,8 @@ const JobSeekerDashboard = () => {
             toggleCollapse={toggleCollapse}
           />
 
+
+
           <FilterBlock
             title="Location"
             stateKey="location"
@@ -161,6 +305,8 @@ const JobSeekerDashboard = () => {
             collapse={collapse}
             toggleCollapse={toggleCollapse}
           />
+
+
 
           <FilterBlock
             title="Salary"
@@ -172,6 +318,9 @@ const JobSeekerDashboard = () => {
             toggleCollapse={toggleCollapse}
           />
 
+
+
+
           <FilterBlock
             title="Company type"
             stateKey="companyType"
@@ -181,6 +330,9 @@ const JobSeekerDashboard = () => {
             collapse={collapse}
             toggleCollapse={toggleCollapse}
           />
+
+
+
 
           <FilterBlock
             title="Role category"
@@ -197,20 +349,21 @@ const JobSeekerDashboard = () => {
             toggleCollapse={toggleCollapse}
           />
 
+
+
+
           <FilterBlock
             title="Education"
             stateKey="education"
-            options={[
-              "Any Graduate",
-              "Any Postgraduate",
-              "B.Sc",
-              "B.Tech",
-            ]}
+            options={["Any Graduate", "Any Postgraduate", "B.Sc", "B.Tech"]}
             filters={filters}
             toggleFilter={toggleFilter}
             collapse={collapse}
             toggleCollapse={toggleCollapse}
           />
+
+
+
 
           <FilterBlock
             title="Industry"
@@ -227,68 +380,277 @@ const JobSeekerDashboard = () => {
             toggleCollapse={toggleCollapse}
           />
 
-          <p className="mt-6 text-gray-400">
+
+
+
+
+          <p className="text-gray-400 text-sm mt-6">
+
             Total Jobs: {filteredJobs.length}
+
           </p>
+
+
+
+
         </div>
 
-        {/* RIGHT JOB LIST */}
-        <div className="w-3/4 p-10">
+
+
+
+
+        {/* RIGHT SECTION */}
+
+        <div className="flex-1 px-10 py-8">
+
+
+
           <motion.h1
-            initial={{ opacity: 0, y: -40 }}
+
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 text-4xl font-bold text-center"
+
+            className="text-3xl font-bold mb-8 text-center"
+
           >
+
             Available Jobs
+
           </motion.h1>
 
-          <div className="flex flex-col gap-6">
+
+
+
+
+          <div className="flex flex-col gap-5 max-w-225 mx-auto">
+
+
+
+
+
             {filteredJobs.map((job, i) => (
+
+
               <motion.div
+
                 key={job._id}
+
+                onClick={() => handleJobClick(job._id)}
+
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+
                 transition={{ delay: i * 0.05 }}
-                className="flex justify-between p-6 border border-gray-800 bg-black/70 rounded-xl hover:border-blue-500"
+
+
+
+                className="bg-black/80 border border-gray-700 rounded-xl p-7 min-h- cursor-pointer hover:border-blue-500 hover:shadow-lg transition"
+
               >
-                <div>
-                  <h2 className="text-xl font-semibold">{job.title}</h2>
-                  <p className="text-sm text-gray-300">
-                    {job.companyName} • {job.location}
-                  </p>
-                  <p className="mt-1">
-                    Experience: {job.minExp}-{job.maxExp} yrs
-                  </p>
-                  <p>
-                    Salary: ₹{job.minSalary} - ₹{job.maxSalary}
-                  </p>
 
-                  <button className="px-4 py-2 mt-4 bg-green-600 rounded hover:bg-green-700">
-                    Apply Now
-                  </button>
+
+
+
+
+                <div className="flex justify-between">
+
+
+
+
+                  {/* LEFT */}
+
+                  <div>
+
+
+                    <h2 className="text-lg font-semibold text-blue-400">
+
+                      {job.title}
+
+                    </h2>
+
+
+
+                    <p className="text-gray-300 text-sm mt-1">
+
+                      {job.companyName}
+
+                    </p>
+
+
+
+
+                    <div className="flex gap-6 text-xs text-gray-400 mt-2">
+
+
+                      <span>
+
+                        🧳 {job.minExp}-{job.maxExp} yrs
+
+                      </span>
+
+
+
+                      <span>
+
+                        📍 {job.location}
+
+                      </span>
+
+
+
+                      <span>
+
+                        💰 ₹{job.minSalary}-{job.maxSalary}
+
+                      </span>
+
+
+
+                    </div>
+
+                    {/* SKILLS */}
+
+                    {job.skills && (
+
+                      <div className="flex flex-wrap gap-2 mt-3">
+
+                        {job.skills.map((skill, index) => (
+
+                          <span
+
+                            key={index}
+
+                            className="text-xs px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-b-cyan-700"
+
+                          >
+
+                            {skill}
+
+                          </span>
+
+                        ))}
+
+                      </div>
+
+                    )}
+
+
+
+
+                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">
+
+                      {job.description}
+
+                    </p>
+
+
+
+
+
+                  </div>
+
+
+
+
+
+                  {/* RIGHT */}
+
+                  <div className="flex flex-col items-center gap-3">
+
+
+
+
+                    <img
+
+                      src={
+
+                        job.companyLogo ||
+
+                        "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+
+                      }
+
+                      className="w-14 h-14 bg-white rounded p-1"
+
+                    />
+
+
+
+
+                    <button
+
+                      onClick={(e) => {
+
+                        e.stopPropagation();
+
+                        alert("Saved Job");
+
+                      }}
+
+                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-400"
+
+                    >
+
+
+                      <Bookmark size={16} />
+
+                      Save
+
+
+                    </button>
+
+
+
+
+                  </div>
+
+
+
+
+
                 </div>
 
-                <div className="text-right">
-                  <img
-                    src={
-                      job.companyLogo ||
-                      "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                    }
-                    className="w-12 h-12 ml-auto"
-                    alt=""
-                  />
-                  <button className="flex items-center gap-2 mt-4 text-gray-400 hover:text-yellow-400">
-                    <Bookmark size={18} />
-                    Save
-                  </button>
-                </div>
+
+
+
+
               </motion.div>
+
+
+
+
             ))}
+
+
+
+
+
           </div>
+
+
+
+
+
         </div>
+
+
+
+
+
       </div>
+
+
+
+
+
     </div>
+
   );
+
 };
+
+
+
+
 
 export default JobSeekerDashboard;

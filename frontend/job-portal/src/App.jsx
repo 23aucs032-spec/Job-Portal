@@ -66,9 +66,10 @@ const App = () => {
             <Route path="applied-jobs" element={<AppliedJobs />} />
             <Route path="saved-jobs" element={<SavedJobs />} />
             <Route path="profile" element={<UserProfile />} />
-            <Route path="job/:jobId" element={<JobDetails />} />
-            
           </Route>
+
+  {       /* Job Details route should be **top-level** or relative to dashboard */}
+          <Route path="/job/:id" element={<JobDetails />} />
         </Route>
 
         {/* ================= EMPLOYER ================= */}
