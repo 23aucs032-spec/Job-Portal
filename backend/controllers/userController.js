@@ -1,89 +1,129 @@
+const User = require("../models/User");
 const fs = require("fs");
 const path = require("path");
-const User = require("../models/User");
-const { default: User } = require("../models/User");
-const { compare } = require("bcryptjs");
-const { use } = require("react");
 
+/* =======================================
+   GET LOGGED IN USER PROFILE
+   GET /api/users/me
+======================================= */
+exports.getMyProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
 
-exports.updateProfile = async (req , res) => {
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
 
-    try {
-
-        const user = await User.findById(req.user._id);
-        if(!user)
-            return res.status(404).json({ message: "User not found" });
-
-        user.name = name || user.name;
-        user.avatar = avatar || user.avatar;
-        user.resume = resume || user.resume;
-
-
-        if(user.role === "employer") {
-            user.companyName = companyName || user.companyName;
-            user.companyDescription = companyDescription || user.companyDescription;
-            user.companyLogo = companyLogo || user.companyLogo;
-        }
-
-
-        await user.save();
-
-        res.json ({
-            _id: user._id,
-            name: user.name,
-            avatar: user.avatar,
-            role: user.role,
-            companyName: user.companyName,
-            companyDescription: user.companyDescription,
-            companyLogo: user.companyLogo,
-            resume: user.resume || '',
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
+/* =======================================
+   UPDATE PROFILE
+   PUT /api/users/update
+======================================= */
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
 
-exports.deleteResume = async (req , res) => {
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
 
-    try {
+    // Update all fields from JSON body
+    user.fullName = req.body.fullName || user.fullName;
+    user.mobile = req.body.mobile || user.mobile;
+    user.city = req.body.city || user.city;
+    user.experience = req.body.experience || user.experience;
+    user.skills = req.body.skills || user.skills;
+    user.education = req.body.education || user.education;
+    user.profilePic = req.body.profilePic || user.profilePic;
 
-        const {resumeUrl} = req.body;
-
-        const fileName = await User.findById(req.user._id);
-        if(!user)
-            return res.status(404).json({ message: "User not found" });
-
-        if(user.role === "jobseeker") {
-            return res.status(403).json({ message: "Only jobseekers can delete resume" });
-        }
-
-        const filePath = path.json(__dirname, "../uploads", fileName);
-
-        if(fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-
-        user.resume = '';
-        await user.save();
-
-        res.json({ message: "Resume deleted successfully" })
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    const updatedUser = await user.save();
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
+/* =======================================
+   UPLOAD RESUME
+   POST /api/users/upload-resume
+======================================= */
+exports.uploadResume = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
 
-exports.getPublicProfile = async (req , res) => {
-    try {
-        
-        const user = await User.findById(req.params.id).select("-password");
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
 
-        if(!user)
-            return res.status(404).json({ message: "User not found" });
-
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    // Delete old resume if exists
+    if (user.resume) {
+      const oldPath = path.join(__dirname, "..", user.resume);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
     }
+
+    // Save new resume path
+    user.resume = `uploads/resumes/${req.file.filename}`;
+    await user.save();
+
+    res.json({ message: "Resume uploaded successfully", resume: user.resume });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/* =======================================
+   DELETE RESUME
+   DELETE /api/users/delete-resume
+======================================= */
+exports.deleteResume = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    // Delete file from uploads folder
+    if (user.resume) {
+      const filePath = path.join(__dirname, "..", user.resume);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      user.resume = "";
+      await user.save();
+    }
+
+    res.json({ message: "Resume deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/* =======================================
+   UPLOAD PROFILE PICTURE
+   POST /api/users/upload-profile-pic
+======================================= */
+exports.uploadProfilePic = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    if (!req.file)
+      return res.status(400).json({ message: "No file uploaded" });
+
+    // Delete old profile picture if exists
+    if (user.profilePic) {
+      const oldPicPath = path.join(__dirname, "..", user.profilePic);
+      if (fs.existsSync(oldPicPath)) fs.unlinkSync(oldPicPath);
+    }
+
+    // Save new profile picture path
+    user.profilePic = `uploads/profilePics/${req.file.filename}`;
+    await user.save();
+
+    res.json({ message: "Profile picture uploaded successfully", profilePic: user.profilePic });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

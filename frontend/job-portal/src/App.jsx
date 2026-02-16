@@ -21,7 +21,7 @@ import EmployerDashboard from "./pages/Employer/EmployerDashboard";
 import JobPostingForm from "./pages/recruiter/JobPostingForm";
 import ManageJobs from "./pages/recruiter/ManageJobs";
 import EditJob from "./pages/recruiter/EditJob"; 
-import ApplicationViewer from "./pages/Employer/ApplicationViewer";
+import ApplicationViewer from "./pages/recruiter/ApplicantsView";
 import EmployerProfilePage from "./pages/Employer/EmployerProfilePage";
 import RegisterStep1 from "./pages/recruiter/RegisterStep1";
 import RegisterStep2 from "./pages/recruiter/RegisterStep2";
@@ -29,8 +29,10 @@ import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
 import RecruiterLogin from "./pages/recruiter/RecruiterLogin";
 import JobListPage from "./pages/JobSeeker/JobListPage";
 
+
 // Protected Route
 import ProtectedRoute from "./routes/ProtectedRoute";
+import Profile from "./pages/JobSeeker/UserProfile";
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -64,10 +66,10 @@ const App = () => {
           <Route path="/jobseeker/dashboard" element={<JobSeekerDashboard />}>
             <Route index element={<AppliedJobs />} />
             <Route path="applied-jobs" element={<AppliedJobs />} />
-            <Route path="saved-jobs" element={<SavedJobs />} />
-            <Route path="profile" element={<UserProfile />} />
-          </Route>
+        </Route>
 
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/saved-jobs" element={<SavedJobs />} />  
   {       /* Job Details route should be **top-level** or relative to dashboard */}
           <Route path="/job/:id" element={<JobDetails />} />
         </Route>
@@ -80,8 +82,8 @@ const App = () => {
           />
           
           <Route path="/manage-jobs" element={<ManageJobs />} />
-          <Route path="/applicants" element={<ApplicationViewer />} />
 
+          <Route path="/applicants/:jobId" element={<ApplicationViewer />} />
 
           <Route path="/jobs" element={<JobListPage />} />
           
@@ -97,7 +99,6 @@ const App = () => {
         <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
         <Route path="/post-job" element={<JobPostingForm />} />
         <Route path="/edit-job/:id" element={<EditJob />} />
-
 
         {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />

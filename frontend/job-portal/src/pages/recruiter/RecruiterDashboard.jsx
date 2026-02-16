@@ -57,8 +57,7 @@ const RecruiterDashboard = () => {
         <div className="grid gap-8 mb-12 md:grid-cols-3">
           {[
             { title: "Post a Job", path: "/post-job" },
-            { title: "Manage Jobs", path: "/manage-jobs" },
-            { title: "View Applicants", path: "/applicants" },
+            { title: "Manage Jobs", path: "/manage-jobs" }
           ].map((item, index) => (
             <motion.div
               key={index}
@@ -132,6 +131,14 @@ const RecruiterDashboard = () => {
                     </span>
                   ))}
                 </div>
+
+                <button
+                  onClick={() => navigate(`/applicants/${job._id}`)}
+                  className="px-4 py-2 mt-3 bg-blue-600 rounded hover:bg-blue-700"
+                >
+                  View Applicants
+                </button>
+
               </motion.div>
             ))}
           </div>

@@ -35,39 +35,40 @@ const EditJob = () => {
 
   // Fetch single job details
   useEffect(() => {
-    if (!token) return;
+  if (!token) return;
 
-    fetch(`http://localhost:5000/api/jobs/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+  fetch(`http://localhost:5000/api/jobs/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      setJobData({
+        title: data.title || "",
+        companyName: data.companyName || "",
+        consultancyName: data.consultancyName || "",
+        hiringFor: data.hiringFor || "",
+        workMode: data.workMode || "",
+        department: data.department || "",
+        location: data.location || "",
+        companyType: data.companyType || "",
+        roleCategory: data.roleCategory || "",
+        education: data.education || "",
+        industry: data.industry || "",
+        minExp: data.minExp || "",
+        maxExp: data.maxExp || "",
+        minSalary: data.minSalary || "",
+        maxSalary: data.maxSalary || "",
+        skills: data.skills?.join(", ") || "",
+        perks: data.perks?.join(", ") || "",
+        jobDescription: data.jobDescription || "",
+        responsibilities: data.responsibilities?.join("\n") || "",
+        applyBefore: data.applyBefore ? data.applyBefore.split("T")[0] : "",
+        contactEmail: data.contactEmail || "",
+      });
     })
-      .then((res) => res.json())
-      .then((data) => {
-        setJobData({
-          title: data.title || "",
-          companyName: data.companyName || "",
-          consultancyName: data.consultancyName || "",
-          hiringFor: data.hiringFor || "",
-          workMode: data.workMode || "",
-          department: data.department || "",
-          location: data.location || "",
-          companyType: data.companyType || "",
-          roleCategory: data.roleCategory || "",
-          education: data.education || "",
-          industry: data.industry || "",
-          minExp: data.minExp || "",
-          maxExp: data.maxExp || "",
-          minSalary: data.minSalary || "",
-          maxSalary: data.maxSalary || "",
-          skills: data.skills?.join(", ") || "",
-          perks: data.perks?.join(", ") || "",
-          jobDescription: data.jobDescription || "",
-          responsibilities: data.responsibilities?.join("\n") || "",
-          applyBefore: data.applyBefore ? data.applyBefore.split("T")[0] : "",
-          contactEmail: data.contactEmail || "",
-        });
-      })
-      .catch((err) => console.error("Error fetching job:", err));
-  }, [id, token]);
+    .catch((err) => console.error("Error fetching job:", err));
+}, [id, token]);
+
 
   // Handle input change
   const handleChange = (e) => {
