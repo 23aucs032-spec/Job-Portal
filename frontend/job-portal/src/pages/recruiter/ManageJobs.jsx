@@ -65,7 +65,7 @@ const ManageJobs = () => {
             onClick={() => navigate("/recruiter/dashboard")}
             className="px-4 py-2 transition bg-blue-600 rounded-lg hover:bg-blue-500"
           >
-            Recruiter Dashboard
+            ← Recruiter Dashboard
           </button>
         </div>
 

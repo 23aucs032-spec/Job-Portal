@@ -167,6 +167,51 @@ const JobDetails = () => {
   if (!job)
     return <p className="p-10 text-white">No job found</p>;
 
+      /* SAVE JOB */
+
+  const handleSaveJob = (e, job) => {
+
+    e.stopPropagation();
+
+
+
+    let savedJobs =
+      JSON.parse(localStorage.getItem("savedJobs"))
+      || [];
+
+
+
+    const alreadySaved =
+      savedJobs.find(
+        (item) => item._id === job._id
+      );
+
+
+
+    if (alreadySaved) {
+
+      alert("Job already saved");
+
+      return;
+
+    }
+
+
+
+    savedJobs.push(job);
+
+
+
+    localStorage.setItem(
+      "savedJobs",
+      JSON.stringify(savedJobs)
+    );
+
+
+
+    alert("Job Saved Successfully");
+
+  };
 
 
   return (
@@ -281,13 +326,15 @@ const JobDetails = () => {
 
             />
 
-            <button className="flex items-center gap-2 mt-2 text-gray-400 hover:text-yellow-400">
-
-              <Bookmark size={20} />
-
-              Save
-
-            </button>
+            <button
+                                  onClick={(e) => {
+                                    handleSaveJob(e, job)
+                                  }}
+                                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-400"
+                                >
+                                  <Bookmark size={16} />
+                                  Save
+                                </button>
 
           </div>
 

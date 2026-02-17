@@ -422,7 +422,16 @@ const handleSubmit = async () => {
             Post Job
           </motion.button>
         </motion.div>
-      </div>
+
+        <motion.button
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate("/recruiter/dashboard")}
+          className="fixed top-6 right-6 z-50 px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-lg transition"
+        >
+          ← Recruiter Dashboard
+        </motion.button>
+     </div>
     </>
   );
 };

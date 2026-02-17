@@ -54,24 +54,25 @@ const RecruiterDashboard = () => {
         </motion.h1>
 
         {/* Top Navigation Cards */}
-        <div className="grid gap-8 mb-12 md:grid-cols-3">
-          {[
-            { title: "Post a Job", path: "/post-job" },
-            { title: "Manage Jobs", path: "/manage-jobs" }
-          ].map((item, index) => (
-            <motion.div
-              key={index}
-              onClick={() => navigate(item.path)}
-              whileHover={{ scale: 1.05 }}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.2 }}
-              className="p-8 text-center border border-gray-800 shadow-xl cursor-pointer bg-black/70 backdrop-blur-lg rounded-2xl hover:border-cyan-400"
-            >
-              <h2 className="text-xl font-semibold">{item.title}</h2>
-            </motion.div>
-          ))}
-        </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 max-w-4xl mx-auto">
+  {[
+    { title: "Post a Job", path: "/post-job" },
+    { title: "Manage Jobs", path: "/manage-jobs" }
+  ].map((item, index) => (
+    <motion.div
+      key={index}
+      onClick={() => navigate(item.path)}
+      whileHover={{ scale: 1.05 }}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.2 }}
+      className="h-40 flex items-center justify-center text-center border border-gray-800 shadow-xl cursor-pointer bg-black/70 backdrop-blur-lg rounded-2xl hover:border-cyan-400"
+    >
+      <h2 className="text-2xl font-semibold">{item.title}</h2>
+    </motion.div>
+  ))}
+</div>
+
 
         {/* Stats */}
         <motion.div

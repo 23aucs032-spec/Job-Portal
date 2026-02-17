@@ -48,6 +48,7 @@ const SavedJobs = () => {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        className="flex justify-between items-start"
       >
 
         <h2 className="text-4xl font-bold mb-2 text-cyan-400">
@@ -57,6 +58,13 @@ const SavedJobs = () => {
         <p className="text-gray-400 mb-8">
           View and manage your saved opportunities
         </p>
+
+        <button
+          onClick={() => navigate("/jobseeker/dashboard")}
+          className="px-5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 transition"
+        >
+        ← Your Dashboard
+        </button>
 
       </motion.div>
 
