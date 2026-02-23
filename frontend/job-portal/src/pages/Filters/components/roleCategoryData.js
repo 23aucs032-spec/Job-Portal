@@ -1,0 +1,27 @@
+const fallbackRoleCategories = [
+  { name: "Retail & B2C Sales", count: 31 },
+  { name: "BD / Pre Sales", count: 24 },
+  { name: "Voice / Blended", count: 12 },
+  { name: "Enterprise & B2B Sales", count: 9 },
+  { name: "Sales Support & Operations", count: 9 },
+  { name: "Customer Success, Service & Ops", count: 7 },
+  { name: "Software Development", count: 5 },
+  { name: "Finance & Accounting - Other", count: 5 },
+  { name: "Other Hospital Staff", count: 5 },
+  { name: "Healthcare & Life Sciences", count: 4 },
+  { name: "Operations", count: 3 },
+  { name: "Business Process Quality", count: 3 },
+  { name: "Legal & Regulatory - Other", count: 3 },
+  { name: "Non Voice", count: 2 },
+  { name: "Engineering", count: 2 },
+  { name: "Back Office", count: 1 },
+  { name: "Quality Assurance and Testing", count: 1 },
+  { name: "Accounting & Taxation", count: 1 },
+  { name: "Digital Marketing", count: 1 },
+  { name: "Marketing", count: 1 },
+  { name: "Administration", count: 1 },
+  { name: "Management Consulting", count: 1 },
+  { name: "Other", count: 1 },
+];
+
+export default fallbackRoleCategories;

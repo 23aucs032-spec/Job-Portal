@@ -316,21 +316,28 @@ const handleSubmit = async () => {
             </select>
           </div>
 
-          {/* Salary */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <input
-              name="minSalary"
-              placeholder="₹ Min salary"
-              className={inputStyle}
-              onChange={handleChange}
-            />
-            <input
-              name="maxSalary"
-              placeholder="₹ Max salary"
-              className={inputStyle}
-              onChange={handleChange}
-            />
-          </div>
+          {/* Salary (Lakhs Per Annum - LPA Only) */}
+<div className="grid grid-cols-2 gap-4 mb-4">
+  <input
+    type="number"
+    name="minSalary"
+    placeholder="Min Salary (LPA)"
+    className={inputStyle}
+    min="0"
+    step="0.1"
+    onChange={handleChange}
+  />
+
+  <input
+    type="number"
+    name="maxSalary"
+    placeholder="Max Salary (LPA)"
+    className={inputStyle}
+    min="0"
+    step="0.1"
+    onChange={handleChange}
+  />
+</div>
 
           {/* Perks */}
           <div className="mb-6">

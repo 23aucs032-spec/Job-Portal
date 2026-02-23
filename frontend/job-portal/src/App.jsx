@@ -14,7 +14,6 @@ import JobSeekerDashboard from "./pages/JobSeeker/JobSeekerDashboard";
 import AppliedJobs from "./pages/JobSeeker/AppliedJobs";
 import JobDetails from "./pages/JobSeeker/JobDetails";
 import SavedJobs from "./pages/JobSeeker/SavedJobs";
-import UserProfile from "./pages/JobSeeker/UserProfile";
 
 // Employer Pages
 import EmployerDashboard from "./pages/Employer/EmployerDashboard";

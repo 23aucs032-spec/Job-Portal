@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import DepartmentFilter from "../Filters/DepartmentFilter";
+import LocationFilter from "../Filters/LocationFilter";
+import CompanyTypeFilter from "../Filters/CompanyTypeFilter";
+import RoleCategoryFilter from "../Filters/RoleCategoryFilter";
 import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
 import {
   Bookmark,
@@ -94,23 +98,66 @@ const JobSeekerDashboard = () => {
     industry: true,
   });
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/jobs/all")
-      .then((res) => res.json())
-      .then((data) => setFilteredJobs(data));
-  }, []);
+  // LOAD ALL JOBS FIRST
+useEffect(() => {
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/jobs/filter", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(filters),
+  fetch("http://localhost:5000/api/jobs/all")
+
+    .then((res) => res.json())
+
+    .then((data) => {
+
+      if (Array.isArray(data)) {
+
+        setFilteredJobs(data);
+
+      } else {
+
+        setFilteredJobs([]);
+
+      }
+
     })
-      .then((res) => res.json())
-      .then((data) => setFilteredJobs(data));
-  }, [filters]);
+
+    .catch(() => setFilteredJobs([]));
+
+}, []);
+
+
+useEffect(() => {
+  const cleanedFilters = {
+    ...filters,
+    salary: filters.salary.map((range) =>
+      range.replace(" LPA", "")
+    ),
+  };
+
+  fetch("http://localhost:5000/api/jobs/filter", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(cleanedFilters),
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Failed to fetch");
+      }
+      return res.json();
+    })
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setFilteredJobs(data);
+      } else {
+        setFilteredJobs([]);
+      }
+    })
+    .catch((error) => {
+      console.error("Filter error:", error);
+      setFilteredJobs([]);
+    });
+
+}, [filters]);
 
     /* SAVE JOB */
 
@@ -159,16 +206,31 @@ const JobSeekerDashboard = () => {
   };
 
 
-  const toggleFilter = (type, value) => {
-    const updated = filters[type].includes(value)
-      ? filters[type].filter((v) => v !== value)
-      : [...filters[type], value];
+const toggleFilter = (type, value) => {
 
-    setFilters({
-      ...filters,
-      [type]: updated,
-    });
-  };
+  let updated = [];
+
+  if (filters[type].includes(value)) {
+
+    updated = filters[type].filter((v) => v !== value);
+
+  }
+
+  else {
+
+    updated = [...filters[type], value];
+
+  }
+
+  setFilters({
+
+    ...filters,
+
+    [type]: updated,
+
+  });
+
+};
 
   const toggleCollapse = (key) => {
     setCollapse({
@@ -325,7 +387,22 @@ const JobSeekerDashboard = () => {
           </h2>
 
           <p className="text-blue-400 text-sm mb-5">
-            Applied ({Object.values(filters).flat().length - 1})
+            Applied (
+{
+Object.entries(filters).reduce((count, [key, value]) => {
+
+  if (key === "experience") {
+
+    return value > 0 ? count + 1 : count;
+
+  }
+
+  return value.length > 0 ? count + 1 : count;
+
+}, 0)
+
+}
+)
           </p>
 
 
@@ -363,81 +440,49 @@ const JobSeekerDashboard = () => {
             toggleCollapse={toggleCollapse}
           />
 
-          <FilterBlock
-            title="Department"
-            stateKey="department"
-            options={[
-              "Engineering",
-              "Sales",
-              "Marketing",
-              "Design",
-            ]}
-            filters={filters}
-            toggleFilter={toggleFilter}
-            collapse={collapse}
-            toggleCollapse={toggleCollapse}
-          />
+         <DepartmentFilter
+ filters={filters}
+ setFilters={setFilters}
+/>
 
-          <FilterBlock
-            title="Location"
-            stateKey="location"
-            options={[
-              "Delhi",
-              "Mumbai",
-              "Chennai",
-              "Bangalore",
-            ]}
-            filters={filters}
-            toggleFilter={toggleFilter}
-            collapse={collapse}
-            toggleCollapse={toggleCollapse}
-          />
+          <LocationFilter
 
-          <FilterBlock
-            title="Salary"
-            stateKey="salary"
-            options={[
-              "0-3",
-              "3-6",
-              "6-10",
-              "10-15",
-            ]}
-            filters={filters}
-            toggleFilter={toggleFilter}
-            collapse={collapse}
-            toggleCollapse={toggleCollapse}
-          />
+filters={filters}
 
-          <FilterBlock
-            title="Company type"
-            stateKey="companyType"
-            options={[
-              "Startup",
-              "Corporate",
-              "Foreign MNC",
-              "Indian MNC",
-            ]}
-            filters={filters}
-            toggleFilter={toggleFilter}
-            collapse={collapse}
-            toggleCollapse={toggleCollapse}
-          />
+setFilters={setFilters}
 
-          <FilterBlock
-            title="Role category"
-            stateKey="roleCategory"
-            options={[
-              "Software Developer",
-              "Digital Marketing",
-              "BD / Pre Sales",
-              "UI/UX",
-            ]}
-            filters={filters}
-            toggleFilter={toggleFilter}
-            collapse={collapse}
-            toggleCollapse={toggleCollapse}
-          />
+/>
 
+<FilterBlock
+  title="Salary (LPA)"
+  stateKey="salary"
+  options={[
+    "0-3 LPA",
+    "3-6 LPA",
+    "6-10 LPA",
+    "10-15 LPA",
+    "15-25 LPA",
+    "25-50 LPA",
+  ]}
+  filters={filters}
+  toggleFilter={toggleFilter}
+  collapse={collapse}
+  toggleCollapse={toggleCollapse}
+/>
+
+<CompanyTypeFilter
+  selected={filters.companyType}
+  setSelected={(value) =>
+    setFilters({ ...filters, companyType: value })
+  }
+/>
+
+<RoleCategoryFilter
+  selected={filters.roleCategory}
+  setSelected={(value) =>
+    setFilters({ ...filters, roleCategory: value })
+  }
+/>
           <FilterBlock
             title="Education"
             stateKey="education"
@@ -491,7 +536,7 @@ const JobSeekerDashboard = () => {
 
           <div className="flex flex-col gap-5 max-w-225 mx-auto">
 
-            {filteredJobs.map((job, i) => (
+            {Array.isArray(filteredJobs) && filteredJobs.map((job, i) => (
 
               <motion.div
                 key={job._id}
@@ -525,7 +570,7 @@ const JobSeekerDashboard = () => {
                       </span>
 
                       <span>
-                        💰 ₹{job.minSalary}-{job.maxSalary}
+                        💰 {job.minSalary}-{job.maxSalary} LPA
                       </span>
                     </div>
 
