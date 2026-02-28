@@ -1,129 +1,157 @@
 import React, { useState, useRef, useEffect } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, ChevronDown } from "lucide-react";
+import {
+  Briefcase,
+  ChevronDown,
+  LogOut,
+  LayoutDashboard,
+  UserPlus,
+  LogIn,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Header = () => {
-  const isAuthenticated = false;
-  //const user = { fullName: "Karthik", role: "employer" };
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
+  const isAuthenticated = !!user && !!token;
 
   const [openDropdown, setOpenDropdown] = useState(false);
-  const dropdownRef = useRef(null);
+  const [openEmployer, setOpenEmployer] = useState(false);
 
+  const dropdownRef = useRef(null);
+  const employerRef = useRef(null);
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpenDropdown(false);
       }
+      if (employerRef.current && !employerRef.current.contains(event.target)) {
+        setOpenEmployer(false);
+      }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
+  // Navigate to dashboard depending on role
+  const goDashboard = () => {
+    if (!user || !user.role) return;
+    if (user.role === "jobseeker") {
+      navigate("/jobseeker/dashboard");
+    } else if (user.role === "recruiter") {
+      navigate("/recruiter/dashboard");
+    }
+  };
+
+  const buttonAnim = {
+    whileHover: { scale: 1.08, y: -2 },
+    whileTap: { scale: 0.95 },
+  };
 
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
       className="fixed top-0 left-0 right-0 z-50 bg-[#020617] border-b border-[#1F2933]"
     >
-      <div className="container px-4 mx-auto">
+      <div className="container px-6 mx-auto">
         <div className="flex items-center justify-between h-16">
 
-          {/* Logo */}
-          <div
-            className="flex items-center space-x-3 cursor-pointer"
+          {/* LOGO */}
+          <motion.div
+            {...buttonAnim}
             onClick={() => navigate("/")}
+            className="flex items-center space-x-3 cursor-pointer"
           >
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#38BDF8]">
               <Briefcase className="w-5 h-5 text-black" />
             </div>
-            <span className="text-xl font-bold text-white">
-              Job Portal
-            </span>
-          </div>
+            <span className="text-xl font-bold text-white">Job Portal</span>
+          </motion.div>
 
-          {/* Nav */}
-          <nav className="items-center hidden space-x-8 md:flex text-gray-300">
+          {/* NAVIGATION */}
+          <nav className="hidden md:flex space-x-8 text-gray-300">
             <button onClick={() => navigate("/")}>Home</button>
             <button onClick={() => navigate("/jobs")}>Jobs</button>
             <button onClick={() => navigate("/companies")}>Companies</button>
             <button onClick={() => navigate("/services")}>Services</button>
           </nav>
 
-          {/* Right */}
+          {/* RIGHT SIDE */}
           <div className="flex items-center space-x-4">
 
+            {/* IF NOT LOGGED IN */}
             {!isAuthenticated && (
               <>
-                {/* Login */}
                 <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
+                  {...buttonAnim}
                   onClick={() => navigate("/login")}
-                  className="px-4 py-2 text-gray-200 border border-[#1F2933] rounded-lg hover:bg-[#0adce0b4]"
+                  className="px-4 py-2 border border-gray-600 rounded-lg text-gray-200 hover:bg-cyan-500"
                 >
                   Login
                 </motion.button>
 
-                {/* Register */}
                 <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
+                  {...buttonAnim}
                   onClick={() => navigate("/signup")}
-                  className="px-6 py-2 text-black rounded-lg shadow-md"
-                  style={{
-                    background: "linear-gradient(90deg, #38BDF8, #14B8A6)",
-                  }}
+                  className="px-6 py-2 rounded-lg text-black"
+                  style={{ background: "linear-gradient(90deg,#38BDF8,#14B8A6)" }}
                 >
                   Register
                 </motion.button>
 
-                <div className="h-6 border-l border-gray-600"></div>
-
-                {/* For Employers */}
-                <div className="relative" ref={dropdownRef}>
+                {/* Employer Dropdown */}
+                <div ref={employerRef} className="relative">
                   <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setOpenDropdown(!openDropdown)}
-                    className="flex items-center px-4 py-2 space-x-2 border border-[#1F2933] rounded-lg text-gray-200 hover:bg-[#0fa8ab]"
+                    {...buttonAnim}
+                    onClick={() => setOpenEmployer(!openEmployer)}
+                    className="px-4 py-2 border border-gray-600 rounded-lg text-gray-200 flex items-center gap-2 hover:bg-cyan-500"
                   >
-                    <span>For Employers</span>
-                    <ChevronDown size={16} />
+                    For Employers
+                    <motion.div animate={{ rotate: openEmployer ? 180 : 0 }}>
+                      <ChevronDown size={16} />
+                    </motion.div>
                   </motion.button>
 
                   <AnimatePresence>
-                    {openDropdown && (
+                    {openEmployer && (
                       <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 w-48 mt-2 bg-[#020617] border border-[#1F2933] rounded-lg shadow-lg text-gray-200"
+                        initial={{ opacity: 0, y: -15, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -15, scale: 0.95 }}
+                        transition={{ duration: 0.25 }}
+                        className="absolute right-0 w-52 mt-3 bg-[#020617] border border-gray-700 rounded-xl shadow-xl overflow-hidden"
                       >
                         <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          onClick={() => {
-                            navigate("/recruiter/login");
-                            setOpenDropdown(false);
-                          }}
-                          className="block w-full px-4 py-3 text-left hover:bg-[#0fa8ab]"
+                          whileHover={{ scale: 1.05, x: 8, backgroundColor: "#0891B2" }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={() => navigate("/recruiter/login")}
+                          className="w-full px-4 py-3 text-left text-white flex items-center gap-2"
                         >
-                          Recruiter Login
+                          <LogIn size={18} /> Employer Login
                         </motion.button>
 
                         <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          onClick={() => {
-                            navigate("/recruiter/register");
-                            setOpenDropdown(false);
-                          }}
-                          className="block w-full px-4 py-3 text-left hover:bg-[#0fa8ab]"
+                          whileHover={{ scale: 1.05, x: 8, backgroundColor: "#0891B2" }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={() => navigate("/recruiter/register")}
+                          className="w-full px-4 py-3 text-left text-white flex items-center gap-2"
                         >
-                          Recruiter Register
+                          <UserPlus size={18} /> Employer Register
                         </motion.button>
                       </motion.div>
                     )}
@@ -131,6 +159,69 @@ const Header = () => {
                 </div>
               </>
             )}
+
+            {/* IF LOGGED IN */}
+            {isAuthenticated && (
+              <div ref={dropdownRef} className="relative">
+                <motion.div
+                  whileHover={{
+                    scale: 1.06,
+                    borderColor: "#38BDF8",
+                    boxShadow: "0px 0px 12px rgba(56,189,248,0.4)",
+                  }}
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => setOpenDropdown(!openDropdown)}
+                  className="flex items-center gap-3 cursor-pointer bg-black/60 px-3 py-2 rounded-lg border border-gray-700 transition-all"
+                >
+                  <motion.img
+                    whileHover={{ scale: 1.1 }}
+                    src={
+                      user.logo || user.profilePic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                    }
+                    className="w-9 h-9 rounded-full"
+                  />
+                  <span className="text-white text-sm font-semibold">
+                    {user.fullName || user.name || user.companyName}
+                  </span>
+                  <motion.div animate={{ rotate: openDropdown ? 180 : 0 }} transition={{ duration: 0.3 }}>
+                    <ChevronDown size={16} />
+                  </motion.div>
+                </motion.div>
+
+                <AnimatePresence>
+                  {openDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -15, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -15, scale: 0.95 }}
+                      transition={{ duration: 0.25 }}
+                      className="absolute right-0 w-52 mt-3 bg-[#020617] border border-gray-700 rounded-xl shadow-xl overflow-hidden"
+                    >
+                      <motion.button
+                        whileHover={{ scale: 1.05, x: 8, backgroundColor: "#0891B2" }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={goDashboard}
+                        className="w-full px-4 py-3 text-left text-white flex items-center gap-2"
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05, x: 8, backgroundColor: "#DC2626" }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={handleLogout}
+                        className="w-full px-4 py-3 text-left text-white flex items-center gap-2"
+                      >
+                        <LogOut size={18} /> Logout
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

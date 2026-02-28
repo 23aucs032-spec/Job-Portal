@@ -1,15 +1,13 @@
 const express = require("express");
 const Job = require("../models/Job");
 const auth = require("../middleware/authMiddleware");
-
 const router = express.Router();
 
 /* =====================================================
    MASTER LISTS
 ===================================================== */
-
 const allDepartments = [
-    // SOFTWARE / IT
+  // SOFTWARE / IT
   "Engineering",
   "Backend Development",
   "Frontend Development",
@@ -139,8 +137,9 @@ const allDepartments = [
   "Freelance",
   "Others"
 ];
+
 const allLocations = [
-    // ===== METRO CITIES =====
+  // ===== METRO CITIES =====
   "Bangalore / Bengaluru",
   "Mumbai",
   "Delhi",
@@ -266,6 +265,7 @@ const allLocations = [
   "Hybrid",
   "Anywhere in India"
 ];
+
 const allCompanyTypes = [
   "Startup",
   "Foreign MNC",
@@ -324,10 +324,146 @@ const allRoleCategories = [
   "Other"
 ];
 
+const allEducation = [
+  // ===== ANY =====
+  "Any Graduate",
+  "Any Postgraduate",
+  "Graduation Not Required",
+
+  // ===== ARTS =====
+  "Bachelor of Arts (B.A)",
+  "Master of Arts (M.A)",
+  "Bachelor of Fine Arts (BFA)",
+
+  // ===== SCIENCE =====
+  "Bachelor of Science (B.Sc)",
+  "Master of Science (M.Sc)",
+
+  // ===== COMMERCE =====
+  "Bachelor of Commerce (B.Com)",
+  "Master of Commerce (M.Com)",
+
+  // ===== ENGINEERING =====
+  "Bachelor of Technology (B.Tech)",
+  "Bachelor of Engineering (B.E)",
+  "Master of Technology (M.Tech)",
+  "Master of Engineering (M.E)",
+
+  // ===== MANAGEMENT =====
+  "Bachelor of Business Administration (BBA)",
+  "Master of Business Administration (MBA/PGDM)",
+
+  // ===== MEDICAL =====
+  "MBBS",
+  "Medical-MS/MD",
+  "Bachelor of Pharmacy (B.Pharm)",
+  "Bachelor of Ayurvedic Medicine (BAMS)",
+  "Bachelor of Homeopathic Medicine (BHMS)",
+  "Bachelor of Veterinary Science (BVSc)",
+
+  // ===== LAW =====
+  "LLB",
+  "LLM",
+
+  // ===== DIPLOMA =====
+  "Diploma",
+  "Post Graduate Diploma",
+  "Integrated PG",
+
+  // ===== PROFESSIONAL =====
+  "CA",
+  "CS",
+  "ICWA",
+  "Others"
+];
+
+const allIndustries = [
+  // IT & SOFTWARE
+  "IT Services & Consulting",
+  "Software Product",
+  "Internet / E-Commerce",
+  "SaaS",
+  "Cloud Computing",
+  "Cyber Security",
+  "Artificial Intelligence",
+  "Data Analytics",
+
+  // SALES / MARKETING
+  "Advertising & Marketing",
+  "Digital Marketing",
+  "Market Research",
+  "Public Relations",
+
+  // FINANCE
+  "Banking",
+  "Financial Services",
+  "Insurance",
+  "Investment Banking",
+  "FinTech",
+
+  // HEALTHCARE
+  "Pharmaceutical & Life Sciences",
+  "Medical Devices",
+  "Hospital & Healthcare",
+  "Biotechnology",
+
+  // EDUCATION
+  "Education / Training",
+  "EdTech",
+  "E-Learning",
+
+  // MANUFACTURING
+  "Automobile",
+  "Manufacturing",
+  "Industrial Equipment",
+  "Electronics",
+
+  // TELECOM
+  "Telecom / ISP",
+
+  // REAL ESTATE
+  "Real Estate",
+  "Infrastructure",
+  "Construction",
+
+  // MEDIA
+  "Media & Entertainment",
+  "Gaming",
+  "Animation",
+
+  // CONSULTING
+  "Management Consulting",
+  "Recruitment / Staffing",
+  "Legal Services",
+
+  // RETAIL
+  "Retail",
+  "FMCG",
+  "Consumer Electronics",
+
+  // LOGISTICS
+  "Logistics & Supply Chain",
+  "Transportation",
+
+  // ENERGY
+  "Oil & Gas",
+  "Renewable Energy",
+  "Power",
+
+  // GOVERNMENT
+  "Government",
+  "Public Sector",
+
+  // OTHER
+  "Hospitality",
+  "Travel & Tourism",
+  "Non-Profit",
+  "Others"
+];
+
 /* =====================================================
    GET ALL JOBS (Public)
 ===================================================== */
-
 // ✅ GET all jobs
 router.get("/", async (req, res) => {
   try {
@@ -338,34 +474,35 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.post("/", auth, async (req, res) => {
+  try {
+    const job = new Job({ ...req.body, recruiter: req.user.id });
+    await job.save();
+    res.status(201).json(job);
+  } catch (err) {
+    console.error("Job creation error:", err); // <-- log full error
+    res.status(500).json({ message: "Job creation failed", error: err.message });
+  }
+});
+
 /* =====================================================
    GENERIC COUNT FUNCTION (Reusable)
 ===================================================== */
-
 const getCountFromDB = async (field) => {
   return await Job.aggregate([
     { $match: { [field]: { $exists: true, $ne: "" } } },
-    {
-      $group: {
-        _id: { $toLower: `$${field}` },
-        count: { $sum: 1 }
-      }
-    }
+    { $group: { _id: { $toLower: `$${field}` }, count: { $sum: 1 } } }
   ]);
 };
 
 /* =====================================================
    DEPARTMENT COUNT
 ===================================================== */
-
 router.get("/department-count", async (req, res) => {
   try {
     const dbCounts = await getCountFromDB("department");
-
     const map = {};
-    dbCounts.forEach(item => {
-      map[item._id] = item.count;
-    });
+    dbCounts.forEach(item => { map[item._id] = item.count; });
 
     const result = allDepartments.map(dep => ({
       name: dep,
@@ -381,39 +518,34 @@ router.get("/department-count", async (req, res) => {
 /* =====================================================
    LOCATION COUNT
 ===================================================== */
-
 router.get("/location-count", async (req, res) => {
   try {
-    const dbCounts = await getCountFromDB("location");
+    const locations = await Job.aggregate([
+      {
+        $group: {
+          _id: "$location",
+          count: { $sum: 1 }
+        }
+      },
+      { $project: { _id: 0, location: "$_id", count: 1 } },
+      { $sort: { count: -1 } }
+    ]);
 
-    const map = {};
-    dbCounts.forEach(item => {
-      map[item._id] = item.count;
-    });
-
-    const result = allLocations.map(loc => ({
-      name: loc,
-      count: map[loc.toLowerCase()] || 0
-    }));
-
-    res.json(result);
-  } catch {
-    res.status(500).json([]);
+    res.json(locations);
+  } catch (error) {
+    console.error("Location count error:", error);
+    res.status(500).json({ error: "Server error fetching locations" });
   }
 });
 
 /* =====================================================
    COMPANY TYPE COUNT
 ===================================================== */
-
 router.get("/company-type-count", async (req, res) => {
   try {
     const dbCounts = await getCountFromDB("companyType");
-
     const map = {};
-    dbCounts.forEach(item => {
-      map[item._id] = item.count;
-    });
+    dbCounts.forEach(item => { map[item._id] = item.count; });
 
     const result = allCompanyTypes.map(type => ({
       name: type,
@@ -426,17 +558,14 @@ router.get("/company-type-count", async (req, res) => {
   }
 });
 
-/* ===============================
-   ROLE CATEGORY COUNT (FIXED)
-================================= */
+/* =====================================================
+   ROLE CATEGORY COUNT
+===================================================== */
 router.get("/role-category-count", async (req, res) => {
   try {
     const dbCounts = await getCountFromDB("roleCategory");
-
     const map = {};
-    dbCounts.forEach(item => {
-      map[item._id] = item.count;
-    });
+    dbCounts.forEach(item => { map[item._id] = item.count; });
 
     const result = allRoleCategories.map(role => ({
       name: role,
@@ -444,17 +573,14 @@ router.get("/role-category-count", async (req, res) => {
     }));
 
     res.json(result);
-
   } catch {
     res.status(500).json([]);
   }
 });
 
-
 /* =====================================================
    SALARY COUNT
 ===================================================== */
-
 router.get("/salary-count", async (req, res) => {
   try {
     const ranges = [
@@ -472,7 +598,6 @@ router.get("/salary-count", async (req, res) => {
           minSalary: { $lte: range.max },
           maxSalary: { $gte: range.min }
         });
-
         return {
           name: range.label,
           value: `${range.min}-${range.max}`,
@@ -488,57 +613,96 @@ router.get("/salary-count", async (req, res) => {
 });
 
 /* =====================================================
+   EDUCATION COUNT
+===================================================== */
+router.get("/education-count", async (req, res) => {
+  try {
+    const dbCounts = await getCountFromDB("education");
+    const map = {};
+    dbCounts.forEach(item => { map[item._id] = item.count; });
+
+    const result = allEducation.map(edu => ({
+      name: edu,
+      count: map[edu.toLowerCase()] || 0
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json([]);
+  }
+});
+
+/* =====================================================
+   INDUSTRY COUNT
+===================================================== */
+router.get("/industry-count", async (req, res) => {
+  try {
+    const dbCounts = await getCountFromDB("industry");
+    const map = {};
+    dbCounts.forEach(item => { map[item._id] = item.count; });
+
+    const result = allIndustries.map(ind => ({
+      name: ind,
+      count: map[ind.toLowerCase()] || 0
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json([]);
+  }
+});
+
+/* =====================================================
    FILTER JOBS
 ===================================================== */
-
 router.post("/filter", async (req, res) => {
   try {
     const filters = req.body || {};
     let query = {};
 
-    const createRegexArray = (arr) =>
-      arr.map(val => new RegExp("^" + val + "$", "i"));
+    const createRegexArray = (arr) => arr.map(val => new RegExp("^" + val + "$", "i"));
 
+    // Experience filter
     if (filters.experience > 0) {
       query.minExp = { $lte: filters.experience };
       query.maxExp = { $gte: filters.experience };
     }
 
-    if (filters.department?.length)
-      query.department = { $in: createRegexArray(filters.department) };
-
-    if (filters.location?.length)
-      query.location = { $in: createRegexArray(filters.location) };
-
-    if (filters.workMode?.length)
-      query.workMode = { $in: createRegexArray(filters.workMode) };
-
-    if (filters.companyType?.length)
-      query.companyType = { $in: createRegexArray(filters.companyType) };
-
-    if (filters.roleCategory?.length)
-      query.roleCategory = { $in: createRegexArray(filters.roleCategory) };
-
+    // Department filter
+    if (filters.department?.length) query.department = { $in: createRegexArray(filters.department) };
+    // Work Mode filter
+    if (filters.workMode?.length) query.workMode = { $in: createRegexArray(filters.workMode) };
+    // Company Type filter
+    if (filters.companyType?.length) query.companyType = { $in: createRegexArray(filters.companyType) };
+    // Role Category filter
+    if (filters.roleCategory?.length) query.roleCategory = { $in: createRegexArray(filters.roleCategory) };
+    // Education filter
     if (filters.education?.length)
-      query.education = { $in: createRegexArray(filters.education) };
-
-    if (filters.industry?.length)
-      query.industry = { $in: createRegexArray(filters.industry) };
-
+      query.education = {
+        $in: filters.education.map(val => new RegExp(val.split("(")[0].trim(), "i"))
+      };
+    // Industry filter
+    if (filters.industry?.length) query.industry = { $in: createRegexArray(filters.industry) };
+    // Salary filter
     if (filters.salary?.length) {
       query.$or = filters.salary.map(range => {
         const [min, max] = range.split("-").map(Number);
-        return {
-          minSalary: { $lte: max },
-          maxSalary: { $gte: min }
-        };
+        return { minSalary: { $lte: max }, maxSalary: { $gte: min } };
       });
+    }
+    // Geo filter
+    if (filters.lat && filters.lng && filters.kms) {
+      query.locationGeo = {
+        $geoWithin: { $centerSphere: [[filters.lng, filters.lat], filters.kms / 6378.1] }
+      };
     }
 
     const jobs = await Job.find(query).sort({ createdAt: -1 });
     res.json(jobs);
-
   } catch (err) {
+    console.error(err);
     res.status(500).json([]);
   }
 });
@@ -546,25 +710,30 @@ router.post("/filter", async (req, res) => {
 /* =====================================================
    CREATE JOB
 ===================================================== */
-
 router.post("/", auth, async (req, res) => {
   try {
-    const job = new Job({
-      ...req.body,
-      recruiter: req.user.id
-    });
-
+    const job = new Job({ ...req.body, recruiter: req.user.id });
     await job.save();
     res.status(201).json(job);
-  } catch {
-    res.status(500).json({ message: "Job creation failed" });
+  } catch (err) {
+    console.error("Job creation error:", err);
+    res.status(500).json({ message: "Job creation failed", error: err.message });
   }
 });
 
+// GET jobs for a specific recruiter
+router.get("/recruiter/:id", auth, async (req, res) => {
+  try {
+    const jobs = await Job.find({ recruiter: req.params.id }).sort({ createdAt: -1 });
+    res.json(jobs);
+  } catch (err) {
+    console.error("Fetch recruiter jobs error:", err);
+    res.status(500).json({ message: "Failed to fetch jobs" });
+  }
+});
 /* =====================================================
    GET JOB BY ID (Public)
 ===================================================== */
-
 router.get("/:id", async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
@@ -578,7 +747,6 @@ router.get("/:id", async (req, res) => {
 /* =====================================================
    APPLY FOR JOB
 ===================================================== */
-
 router.post("/:id/apply", auth, async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
@@ -589,10 +757,8 @@ router.post("/:id/apply", auth, async (req, res) => {
 
     job.applicants = job.applicants || [];
     job.applicants.push(req.user.id);
-
     await job.save();
     res.json({ message: "Applied successfully" });
-
   } catch (err) {
     res.status(500).json({ message: "Application failed" });
   }
@@ -601,17 +767,11 @@ router.post("/:id/apply", auth, async (req, res) => {
 /* =====================================================
    DELETE JOB
 ===================================================== */
-
 router.delete("/:id", auth, async (req, res) => {
   try {
-    const job = await Job.findOneAndDelete({
-      _id: req.params.id,
-      recruiter: req.user.id
-    });
-
+    const job = await Job.findOneAndDelete({ _id: req.params.id, recruiter: req.user.id });
     if (!job) return res.status(404).json({ message: "Not found" });
     res.json({ message: "Deleted successfully" });
-
   } catch {
     res.status(500).json({ message: "Delete failed" });
   }
@@ -620,7 +780,6 @@ router.delete("/:id", auth, async (req, res) => {
 /* =====================================================
    UPDATE JOB
 ===================================================== */
-
 router.put("/:id", auth, async (req, res) => {
   try {
     const job = await Job.findOneAndUpdate(
@@ -628,10 +787,8 @@ router.put("/:id", auth, async (req, res) => {
       req.body,
       { new: true }
     );
-
     if (!job) return res.status(404).json({ message: "Not found" });
     res.json(job);
-
   } catch {
     res.status(500).json({ message: "Update failed" });
   }

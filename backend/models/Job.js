@@ -26,17 +26,15 @@ const jobSchema = new mongoose.Schema(
     responsibilities: [String],
 
     jobDescription: String,
-
     contactEmail: String,
-
     applyBefore: Date,
 
     recruiter: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "User",  // Should reference the recruiter user
+      required: true
     },
 
-    // ✅ ADD THIS FIELD (VERY IMPORTANT)
     applicants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -46,5 +44,7 @@ const jobSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+jobSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("Job", jobSchema);

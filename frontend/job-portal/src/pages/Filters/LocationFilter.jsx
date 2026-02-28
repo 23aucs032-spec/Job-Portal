@@ -14,32 +14,39 @@ const LocationFilter = ({ filters, setFilters }) => {
           "http://localhost:5000/api/jobs/location-count"
         );
 
+        if (!res.ok) throw new Error("Failed to fetch location counts");
+
         const data = await res.json();
 
+        // Ensure we have an array
         const backendLocations = Array.isArray(data)
           ? data
           : Array.isArray(data?.data)
           ? data.data
           : [];
 
+        // Merge with fallback locations
         const merged = fallbackLocations.map((loc) => {
           const found = backendLocations.find(
             (d) =>
-              d.name?.trim().toLowerCase() ===
-              loc.name?.trim().toLowerCase()
+              typeof d.location === "string" &&
+              d.location.trim().toLowerCase() === loc.name?.trim().toLowerCase()
           );
 
           return {
-            name: loc.name,
-            count: found?.count || 0,
+            name: loc.name || "Unknown",
+            count: typeof found?.count === "number" ? found.count : 0,
           };
         });
 
         setLocations(merged);
-      } catch {
+      } catch (err) {
+        console.error("Location fetch error:", err);
+
+        // Fallback: all zero counts
         setLocations(
           fallbackLocations.map((loc) => ({
-            name: loc.name,
+            name: loc.name || "Unknown",
             count: 0,
           }))
         );
@@ -51,6 +58,7 @@ const LocationFilter = ({ filters, setFilters }) => {
 
   /* ================= TOGGLE LOCATION ================= */
   const toggleLocation = (name) => {
+    if (!name) return;
     const updated = filters.location.includes(name)
       ? filters.location.filter((loc) => loc !== name)
       : [...filters.location, name];
@@ -66,11 +74,9 @@ const LocationFilter = ({ filters, setFilters }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-sm font-semibold text-white">
-          Location
-        </h3>
+        <h3 className="text-sm font-semibold text-white">Location</h3>
 
-        {filters.location.length > 0 && (
+        {filters.location?.length > 0 && (
           <span className="text-xs bg-blue-600 px-2 py-1 rounded-full">
             {filters.location.length}
           </span>
@@ -89,12 +95,10 @@ const LocationFilter = ({ filters, setFilters }) => {
               onChange={() => toggleLocation(loc.name)}
               className="accent-blue-500"
             />
-            {loc.name}
+            {loc.name || "Unknown"}
           </div>
 
-          <span className="text-xs text-gray-400">
-            ({loc.count})
-          </span>
+          <span className="text-xs text-gray-400">({loc.count || 0})</span>
         </label>
       ))}
 

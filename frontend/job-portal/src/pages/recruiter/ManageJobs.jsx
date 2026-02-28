@@ -6,8 +6,6 @@ import { FaEdit, FaTrash, FaInfoCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
 
-const API_URL = "http://localhost:5000/api/jobs";
-
 const ManageJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -17,23 +15,33 @@ const ManageJobs = () => {
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
 
-      const response = await axios.get(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      if (!token || !user) {
+        navigate("/login");
+        return;
+      }
 
-      setJobs(response.data || []); // Safety fallback
+      // Fetch only this recruiter’s jobs
+      const response = await axios.get(
+        `http://localhost:5000/api/jobs/recruiter/${user._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setJobs(response.data || []);
     } catch (error) {
       console.error("Fetch Jobs Error:", error);
-      setJobs([]); // fallback to empty array
+      setJobs([]);
     }
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchJobs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDelete = async (id) => {
@@ -41,7 +49,7 @@ const ManageJobs = () => {
       const token = localStorage.getItem("token");
 
       if (window.confirm("Are you sure you want to delete this job?")) {
-        await axios.delete(`${API_URL}/${id}`, {
+        await axios.delete(`http://localhost:5000/api/jobs/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -57,7 +65,6 @@ const ManageJobs = () => {
   return (
     <>
       <AnimatedBackground />
-
       <div className="relative z-10 min-h-screen p-6 text-white">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Manage Jobs</h1>
@@ -136,7 +143,7 @@ const ManageJobs = () => {
 
         {jobs.length === 0 && (
           <p className="mt-10 text-center text-gray-400">
-            No jobs posted yet.
+            You haven't posted any jobs yet.
           </p>
         )}
 

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 // eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import DepartmentFilter from "../Filters/DepartmentFilter";
 import LocationFilter from "../Filters/LocationFilter";
 import CompanyTypeFilter from "../Filters/CompanyTypeFilter";
 import RoleCategoryFilter from "../Filters/RoleCategoryFilter";
+import EducationFilter from "../Filters/EducationFilter";
+import IndustryFilter from "../Filters/IndustryFilter";
+import KmsFilter from "../Filters/KmsFilter";
 import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
 import {
   Bookmark,
@@ -85,6 +88,10 @@ const JobSeekerDashboard = () => {
     roleCategory: [],
     education: [],
     industry: [],
+    kms: 0,          // ✅ ADD THIS
+    lat: null,       // ✅ ADD THIS
+    lng: null,       // ✅ ADD THIS
+
   });
 
   const [collapse, setCollapse] = useState({
@@ -96,12 +103,13 @@ const JobSeekerDashboard = () => {
     roleCategory: true,
     education: true,
     industry: true,
+    kms: true, // ✅ ADD THIS
   });
 
   // LOAD ALL JOBS FIRST
 useEffect(() => {
 
-  fetch("http://localhost:5000/api/jobs/all")
+  fetch("http://localhost:5000/api/jobs")
 
     .then((res) => res.json())
 
@@ -123,6 +131,24 @@ useEffect(() => {
 
 }, []);
 
+useEffect(() => {
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      setFilters((prev) => ({
+        ...prev,
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      }));
+    },
+    // eslint-disable-next-line no-unused-vars
+    (err) => {
+      console.log("Location permission denied");
+    }
+  );
+}, []);
+
 
 useEffect(() => {
   const cleanedFilters = {
@@ -132,31 +158,30 @@ useEffect(() => {
     ),
   };
 
-  fetch("http://localhost:5000/api/jobs/filter", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(cleanedFilters),
-  })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error("Failed to fetch");
-      }
-      return res.json();
-    })
-    .then((data) => {
-      if (Array.isArray(data)) {
-        setFilteredJobs(data);
-      } else {
-        setFilteredJobs([]);
-      }
-    })
-    .catch((error) => {
+  const fetchFilteredJobs = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/jobs/filter",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(cleanedFilters),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch");
+
+      const data = await res.json();
+      setFilteredJobs(Array.isArray(data) ? data : []);
+    } catch (error) {
       console.error("Filter error:", error);
       setFilteredJobs([]);
-    });
+    }
+  };
 
+  fetchFilteredJobs();
 }, [filters]);
 
     /* SAVE JOB */
@@ -290,83 +315,108 @@ const toggleFilter = (type, value) => {
             Home
           </button>
 
+{/* PROFILE */}
+<div className="relative">
+
+  {/* PROFILE BUTTON */}
+  <motion.div
+    whileHover={{
+      scale: 1.05,
+      borderColor: "#3B82F6",
+      boxShadow: "0px 0px 12px rgba(59,130,246,0.4)"
+    }}
+    whileTap={{ scale: 0.95 }}
+    transition={{ type: "spring", stiffness: 300 }}
+    onClick={() => setProfileOpen(!profileOpen)}
+    className="flex items-center gap-3 cursor-pointer bg-black/60 px-3 py-2 rounded-lg border border-blue-900 transition-all"
+  >
+
+    <motion.img
+      whileHover={{ scale: 1.1 }}
+      src={user.profilePic}
+      className="w-9 h-9 rounded-full border border-blue-900"
+    />
+
+    <p className="text-sm font-semibold">
+      {user.fullName}
+    </p>
+
+    <motion.div
+      animate={{ rotate: profileOpen ? 180 : 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <ChevronDown size={16} />
+    </motion.div>
+
+  </motion.div>
 
 
-          {/* PROFILE */}
+  {/* DROPDOWN */}
+  <AnimatePresence>
+    {profileOpen && (
 
-          <div className="relative">
+      <motion.div
+        initial={{ opacity: 0, y: -15, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -15, scale: 0.95 }}
+        transition={{ duration: 0.25 }}
+        className="absolute right-0 mt-3 w-52 bg-black border border-gray-700 rounded-xl shadow-xl overflow-hidden"
+      >
 
+        {/* PROFILE BUTTON */}
+        <motion.button
+          whileHover={{
+            scale: 1.05,
+            x: 8,
+            backgroundColor: "#1E293B"
+          }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => navigate("/profile")}
+          className="flex items-center gap-2 w-full px-4 py-3 text-white"
+        >
+          <User size={16} />
+          Profile
+        </motion.button>
 
-            <div
-              onClick={() => setProfileOpen(!profileOpen)}
-              className="flex items-center gap-3 cursor-pointer bg-black/60 px-3 py-2 rounded-lg border border-gray-700 hover:border-blue-500 transition"
-            >
+        {/* SAVED JOBS */}
+        <motion.button
+          whileHover={{
+            scale: 1.05,
+            x: 8,
+            backgroundColor: "#1E293B"
+          }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => navigate("/saved-jobs")}
+          className="flex items-center gap-2 w-full px-4 py-3 text-white"
+        >
+          <Briefcase size={16} />
+          Saved Jobs
+        </motion.button>
 
+        {/* LOGOUT */}
+        <motion.button
+          whileHover={{
+            scale: 1.05,
+            x: 8,
+            backgroundColor: "#DC2626"
+          }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          onClick={handleLogout}
+          className="flex items-center gap-2 w-full px-4 py-3 text-white"
+        >
+          <LogOut size={16} />
+          Logout
+        </motion.button>
 
-              <img
-                src={user.profilePic}
-                className="w-9 h-9 rounded-full border border-blue-500"
-              />
+      </motion.div>
 
+    )}
+  </AnimatePresence>
 
-              <p className="text-sm font-semibold">
-                {user.fullName}
-              </p>
-
-
-            </div>
-
-
-
-            {/* DROPDOWN */}
-
-            {profileOpen && (
-
-              <motion.div
-
-                initial={{ opacity: 0, y: -10 }}
-
-                animate={{ opacity: 1, y: 0 }}
-
-                className="absolute right-0 mt-2 w-48 bg-black border border-gray-700 rounded-lg shadow-lg overflow-hidden"
-              >
-
-
-                <button
-                  onClick={() => navigate("/profile")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-800"
-                >
-                  <User size={16} />
-                  Profile
-                </button>
-
-
-
-                <button
-                  onClick={() => navigate("/saved-jobs")}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-800"
-                >
-                  <Briefcase size={16} />
-                  Saved Jobs
-                </button>
-
-
-
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-red-600"
-                >
-                  <LogOut size={16} />
-                  Logout
-                </button>
-
-
-              </motion.div>
-
-            )}
-
-
-          </div>
+</div>
 
 
         </div>
@@ -387,47 +437,118 @@ const toggleFilter = (type, value) => {
           </h2>
 
           <p className="text-blue-400 text-sm mb-5">
-            Applied (
-{
-Object.entries(filters).reduce((count, [key, value]) => {
+  Applied ({
+    // eslint-disable-next-line no-unused-vars
+    Object.entries(filters).reduce((count, [key, value]) => {
+      // Number filter
+      if (typeof value === "number") {
+        return value > 0 ? count + 1 : count;
+      }
+      // Array filter
+      if (Array.isArray(value)) {
+        return value.length > 0 ? count + 1 : count;
+      }
+      // Other types (null, string, etc.)
+      return count;
+    }, 0)
+  })
+</p>
 
-  if (key === "experience") {
 
-    return value > 0 ? count + 1 : count;
+{/* EXPERIENCE FILTER */}
+<div className="mb-6">
 
-  }
+  {/* HEADER */}
+  <div
+    className="flex justify-between items-center cursor-pointer mb-4"
+    onClick={() => toggleCollapse("experience")}
+  >
+    <h3 className="font-semibold text-sm text-gray-200">
+      Experience
+    </h3>
 
-  return value.length > 0 ? count + 1 : count;
+    {collapse.experience ? (
+      <ChevronUp size={16} />
+    ) : (
+      <ChevronDown size={16} />
+    )}
+  </div>
 
-}, 0)
 
-}
-)
-          </p>
+  {/* SLIDER */}
+  {collapse.experience && (
 
+    <div className="px-2">
 
-          {/* EXPERIENCE */}
-          <div className="mb-7">
+      {/* Bubble + Slider container */}
+      <div className="relative w-full">
 
-            <h3 className="font-semibold text-sm mb-2">
-              Experience: {filters.experience} Yrs
-            </h3>
+        {/* Bubble */}
+        <div
+          className="absolute -top-7"
+          style={{
+            left: `calc(${filters.experience / 30 * 100}% - 14px)`
+          }}
+        >
+          <div className="relative">
 
-            <input
-              type="range"
-              min="0"
-              max="30"
-              value={filters.experience}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  experience: Number(e.target.value),
-                })
-              }
-              className="w-full accent-blue-500"
-            />
+            {/* Circle */}
+            <div className="bg-blue-600 text-white text-xs w-7 h-7 flex items-center justify-center rounded-full">
+
+              {filters.experience}
+
+            </div>
+
+            {/* Triangle */}
+            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-8 border-t-blue-600 mx-auto -mt-1"></div>
 
           </div>
+        </div>
+
+
+        {/* Slider */}
+        <input
+          type="range"
+          min="0"
+          max="30"
+          value={filters.experience}
+          onChange={(e) =>
+            setFilters({
+              ...filters,
+              experience: Number(e.target.value),
+            })
+          }
+          className="w-full appearance-none bg-transparent cursor-pointer
+          [&::-webkit-slider-runnable-track]:h-1
+          [&::-webkit-slider-runnable-track]:bg-gray-600
+          [&::-webkit-slider-thumb]:appearance-none
+          [&::-webkit-slider-thumb]:w-4
+          [&::-webkit-slider-thumb]:h-4
+          [&::-webkit-slider-thumb]:bg-blue-600
+          [&::-webkit-slider-thumb]:rounded-full
+          [&::-webkit-slider-thumb]:-mt-1.5"
+        />
+
+      </div>
+
+
+      {/* Labels */}
+      <div className="flex justify-between text-xs text-gray-400 mt-2">
+
+        <span>0 Yrs</span>
+
+        <span>30 Yrs</span>
+
+      </div>
+
+
+      <hr className="border-gray-700 mt-4" />
+
+    </div>
+
+  )}
+
+</div>
 
 
           <FilterBlock
@@ -477,41 +598,39 @@ setFilters={setFilters}
   }
 />
 
+<KmsFilter
+  filters={filters}
+  setFilters={setFilters}
+  collapse={collapse}
+  toggleCollapse={toggleCollapse}
+/>
+
 <RoleCategoryFilter
   selected={filters.roleCategory}
   setSelected={(value) =>
     setFilters({ ...filters, roleCategory: value })
   }
 />
-          <FilterBlock
-            title="Education"
-            stateKey="education"
-            options={[
-              "Any Graduate",
-              "Any Postgraduate",
-              "B.Sc",
-              "B.Tech",
-            ]}
-            filters={filters}
-            toggleFilter={toggleFilter}
-            collapse={collapse}
-            toggleCollapse={toggleCollapse}
-          />
 
-          <FilterBlock
-            title="Industry"
-            stateKey="industry"
-            options={[
-              "IT Services",
-              "Software Product",
-              "Advertising",
-              "Consulting",
-            ]}
-            filters={filters}
-            toggleFilter={toggleFilter}
-            collapse={collapse}
-            toggleCollapse={toggleCollapse}
-          />
+<EducationFilter
+  selected={filters.education}
+  setSelected={(value) =>
+    setFilters((prev) => ({
+      ...prev,
+      education: value,
+    }))
+  }
+/>
+
+<IndustryFilter
+  selected={filters.industry}
+  setSelected={(value) =>
+    setFilters({
+      ...filters,
+      industry: value,
+    })
+  }
+/>
 
 
           <p className="text-gray-400 text-sm mt-6">
@@ -565,9 +684,11 @@ setFilters={setFilters}
                         🧳 {job.minExp}-{job.maxExp} yrs
                       </span>
 
-                      <span>
-                        📍 {job.location}
-                      </span>
+<span>
+  📍 {Array.isArray(job.location?.coordinates)
+        ? `Lat: ${job.location.coordinates[1]}, Lng: ${job.location.coordinates[0]}`
+        : job.location}
+</span>
 
                       <span>
                         💰 {job.minSalary}-{job.maxSalary} LPA

@@ -27,6 +27,7 @@ import RegisterStep2 from "./pages/recruiter/RegisterStep2";
 import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
 import RecruiterLogin from "./pages/recruiter/RecruiterLogin";
 import JobListPage from "./pages/JobSeeker/JobListPage";
+import RecruiterProfile from "./pages/recruiter/RecruiterProfile";
 
 
 // Protected Route
@@ -96,6 +97,7 @@ const App = () => {
         <Route path="/recruiter/register" element={<RegisterStep1 />} />
         <Route path="/recruiter/register-step2" element={<RegisterStep2 />} />
         <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+        <Route path="/recruiter/profile" element={<RecruiterProfile />} />
         <Route path="/post-job" element={<JobPostingForm />} />
         <Route path="/edit-job/:id" element={<EditJob />} />
 

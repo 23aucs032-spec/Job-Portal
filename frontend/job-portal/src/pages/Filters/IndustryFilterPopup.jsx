@@ -3,92 +3,132 @@ import { X } from "lucide-react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
-const CompanyTypeFilterPopup = ({
-  selected,
+const IndustryFilterPopup = ({
+  selected = [],
   setSelected,
   closePopup,
-  companyTypes,
+  industries,
 }) => {
+
   const [search, setSearch] = useState("");
 
-  const toggleOption = (type) => {
-    if (selected.includes(type)) {
-      setSelected(selected.filter((item) => item !== type));
+  const toggleOption = (industry) => {
+
+    if (selected.includes(industry)) {
+
+      setSelected(
+        selected.filter((item) => item !== industry)
+      );
+
     } else {
-      setSelected([...selected, type]);
+
+      setSelected([...selected, industry]);
+
     }
+
   };
 
   const clearAll = () => {
+
     setSelected([]);
+
   };
 
-  const filteredTypes = companyTypes.filter((type) =>
-    type.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = industries.filter((industry) =>
+    industry.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
+
     <div className="fixed inset-0 z-50 flex">
-      {/* Dark Overlay */}
+
+      {/* OVERLAY */}
+
       <div
         className="fixed inset-0 bg-black/60"
         onClick={closePopup}
       ></div>
 
-      {/* Left Drawer */}
+      {/* POPUP */}
+
       <motion.div
-        initial={{ x: "-400%" }}
+        initial={{ x: "-100%" }}
         animate={{ x: 0 }}
-        exit={{ x: "-400%" }}
         transition={{ duration: 0.3 }}
-        className="relative w-87.5 h-full bg-[#0f172a] shadow-xl p-5 border-r border-gray-700"
+        className="relative w-96 h-full bg-[#0f172a] shadow-xl p-5 border-r border-gray-700"
       >
-        {/* Header */}
+
+        {/* HEADER */}
+
         <div className="flex justify-between items-center mb-4">
+
           <h2 className="text-lg font-semibold text-white">
-            Company Type
+            Industry
           </h2>
+
           <button onClick={closePopup}>
+
             <X className="text-gray-400 hover:text-white" size={20} />
+
           </button>
+
         </div>
 
-        {/* Search */}
+
+        {/* SEARCH */}
+
         <input
           type="text"
-          placeholder="Search Company Type"
+          placeholder="Search Industry"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full mb-4 px-3 py-2 rounded-md bg-[#1e293b] text-white border border-gray-600 focus:outline-none"
+          className="w-full mb-4 px-3 py-2 rounded-md bg-[#1e293b] text-white border border-gray-600"
         />
 
-        {/* Scrollable List */}
+
+        {/* LIST */}
+
         <div className="flex-1 max-h-[65vh] overflow-y-auto space-y-2 pr-2">
-          {filteredTypes.map((type) => (
+
+          {filtered.map((industry) => (
+
             <label
-              key={type.name}
-              className="flex justify-between items-center cursor-pointer text-sm text-white"
+              key={industry.name}
+              className="flex justify-between items-center text-sm text-white cursor-pointer"
             >
+
               <div className="flex items-center gap-2">
+
                 <input
                   type="checkbox"
-                  checked={selected.includes(type.name)}
-                  onChange={() => toggleOption(type.name)}
+                  checked={selected.includes(industry.name)}
+                  onChange={() => toggleOption(industry.name)}
                 />
-                {type.name}
+
+                {industry.name}
+
               </div>
+
               <span className="text-gray-400">
-                ({type.count})
+
+                ({industry.count})
+
               </span>
+
             </label>
+
           ))}
+
         </div>
 
-        {/* Footer */}
-        <div className="absolute bottom-5 left-5 right-5 flex justify-between items-center">
+
+        {/* FOOTER */}
+
+        <div className="absolute bottom-5 left-5 right-5 flex justify-between">
+
           <button
             onClick={clearAll}
-            className="text-red-400 text-sm hover:underline"
+            className="text-red-400 text-sm"
           >
             Clear All
           </button>
@@ -99,10 +139,15 @@ const CompanyTypeFilterPopup = ({
           >
             Apply
           </button>
+
         </div>
+
       </motion.div>
+
     </div>
+
   );
+
 };
 
-export default CompanyTypeFilterPopup;
+export default IndustryFilterPopup;
