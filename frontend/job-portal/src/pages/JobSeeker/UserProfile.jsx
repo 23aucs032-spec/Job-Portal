@@ -142,7 +142,7 @@ const closeModal = (name) => {
             </div>
 
             {/* Missing details */}
-            <div className="bg-gradient-to-br from-amber-950/70 to-amber-900/40 rounded-xl p-6 w-full md:w-80 flex flex-col items-center text-center border border-amber-800/50">
+            <div className="bg-linear-to-br from-amber-950/70 to-amber-900/40 rounded-xl p-6 w-full md:w-80 flex flex-col items-center text-center border border-amber-800/50">
               <button className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 px-8 rounded-lg font-medium transition shadow-md">
                 Add 11 missing details
               </button>
