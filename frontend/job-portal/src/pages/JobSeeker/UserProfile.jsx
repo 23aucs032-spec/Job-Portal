@@ -1035,14 +1035,14 @@ const [selectedCourseType, setSelectedCourseType] = useState('');
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">Course duration</label>
           <div className="flex items-center gap-3 flex-wrap">
-            <select className="bg-gray-800 border border-gray-600 rounded-lg p-3 text-gray-200 min-w-[100px]">
+            <select className="bg-gray-800 border border-gray-600 rounded-lg p-3 text-gray-200 min-w-25">
               <option>2023</option>
               <option>2022</option>
               <option>2021</option>
               {/* more years */}
             </select>
             <span className="text-gray-400">to</span>
-            <select className="bg-gray-800 border border-gray-600 rounded-lg p-3 text-gray-200 min-w-[100px]">
+            <select className="bg-gray-800 border border-gray-600 rounded-lg p-3 text-gray-200 min-w-25">
               <option>2026</option>
               <option>2027</option>
               <option>2025</option>
