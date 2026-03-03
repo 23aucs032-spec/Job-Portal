@@ -10,7 +10,6 @@ const jobRoutes = require("./routes/jobRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const dashboardRoutes = require("./routes/dashboardroutes");
 const recruiterRoutes = require("./routes/recruiterRoutes");
-const profileRoutes = require("./routes/profileRoutes");
 const userRoutes = require("./routes/userRoutes");
 
 
@@ -29,7 +28,6 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/recruiter", recruiterRoutes);
-app.use("/api/profile", profileRoutes);
 app.use("/api/users", userRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

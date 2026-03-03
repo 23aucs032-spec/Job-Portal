@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
-// eslint-disable-next-line no-unused-vars
+/* eslint-disable react-hooks/refs */
+/* eslint-disable no-unused-vars */
+import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit2,
@@ -13,7 +14,9 @@ import {
   FileText,
   Download,
   Upload,
-  Plus, 
+  Briefcase,
+  Plus,     
+  Trash2  
 } from "lucide-react";
 import CareerPreferenceModal from "../../components/ProfilePage/CareerPreferenceModal";
 import EducationModal from "../../components/ProfilePage/EducationModal";
@@ -22,6 +25,7 @@ import LanguagesModal from "../../components/ProfilePage/LanguagesModal";
 import InternshipsModal from "../../components/ProfilePage/InternshipsModal";
 import ProjectsModal from "../../components/ProfilePage/ProjectsModal";
 import AcademicAchievements from "../../components/ProfilePage/AcademicAchievements";
+import EmploymentModal from "../../components/ProfilePage/Employment";
 
 const ProfilePageDark = () => {
   // ================= PROFILE STATE =================
@@ -46,7 +50,7 @@ const [preferences, setPreferences] = useState({
   locations: ["Chennai", "Bangalore"],
 });
 
-  // eslint-disable-next-line no-unused-vars
+
   const education = {
     course: "B.Sc Computer Science",
     specialization: "Artificial Intelligence",
@@ -68,10 +72,27 @@ const [startYear, setStartYear] = useState("2023");
 const [endYear, setEndYear] = useState("2026");
 
   const [skills, setSkills] = useState([]);
-  const resume = {
-    name: "Karthik_Resume.pdf",
-    uploaded: "01 Feb 2026",
+const [resume, setResume] = useState({
+  name: "",
+  uploaded: "",
+  url: ""
+});
+const fileInputRef = useRef(null);
+const handleResumeUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const uploadedResume = {
+    name: file.name,
+    uploaded: new Date().toLocaleDateString(),
+    url: URL.createObjectURL(file),
   };
+
+  setResume(uploadedResume);
+};
+const handleDeleteResume = () => {
+  setResume(null);
+};
   
 const [languages, setLanguages] = useState([]);
 
@@ -88,8 +109,8 @@ const [preferenceForm, setPreferenceForm] = useState(preferences);
   // Profile form data
 const [formData, setFormData] = useState(profile);
 
-// Employment
-const [employment, setEmployment] = useState([]);
+
+
 
   const openPreferenceModal = () => {
   setPreferenceForm(preferences);
@@ -129,14 +150,13 @@ const handlePreferenceSave = () => {
     Internships: useRef(null),
     Projects: useRef(null),
     "Profile Summary": useRef(null),
-    "Competitive Exams": useRef(null),
+    "CompetitiveExams": useRef(null),
     Employment: useRef(null),
     "Academic Achievements": useRef(null),
     Resume: useRef(null),
 
   };
 
-  // eslint-disable-next-line react-hooks/refs
   const quickLinks = Object.keys(sectionsRef);
 
   const scrollToSection = (section) => {
@@ -185,8 +205,12 @@ const handleEditExam = (index) => {
 const handleDeleteExam = (index) => {
   setCompetitiveExams(competitiveExams.filter((_, i) => i !== index));
 };
+
+// ================= EMPLOYMENT STATE =================
+const [employments, setEmployments] = useState([]);
 const [showEmploymentModal, setShowEmploymentModal] = useState(false);
 const [editingEmploymentIndex, setEditingEmploymentIndex] = useState(null);
+
 const [employmentForm, setEmploymentForm] = useState({
   role: "",
   company: "",
@@ -197,29 +221,48 @@ const [employmentForm, setEmploymentForm] = useState({
   currentlyWorking: false,
   description: "",
 });
-
-// Handlers
-const handleSaveEmployment = (data) => {
-  if (editingEmploymentIndex !== null) {
-    const updated = [...employment];
-    updated[editingEmploymentIndex] = data;
-    setEmployment(updated);
-    setEditingEmploymentIndex(null);
-  } else {
-    setEmployment([...employment, data]);
-  }
-  setShowEmploymentModal(false);
-};
-
-const handleEditEmployment = (index) => {
-  setEditingEmploymentIndex(index);
-  setEmploymentForm(employment[index]);
+// Open Add Modal
+const handleAddEmployment = () => {
+  setEmploymentForm({
+    role: "",
+    company: "",
+    fromMonth: "",
+    fromYear: "",
+    toMonth: "",
+    toYear: "",
+    currentlyWorking: false,
+    description: "",
+  });
+  setEditingEmploymentIndex(null);
   setShowEmploymentModal(true);
 };
 
-const handleDeleteEmployment = (index) => {
-  setEmployment(employment.filter((_, i) => i !== index));
+// Save Employment
+const handleSaveEmployment = (formData) => {
+  if (editingEmploymentIndex !== null) {
+    const updated = [...employments];
+    updated[editingEmploymentIndex] = formData;
+    setEmployments(updated);
+  } else {
+    setEmployments([...employments, formData]);
+  }
+
+  setShowEmploymentModal(false);
 };
+
+// Edit Employment
+const handleEditEmployment = (index) => {
+  setEmploymentForm(employments[index]);
+  setEditingEmploymentIndex(index);
+  setShowEmploymentModal(true);
+};
+
+// Delete Employment
+const handleDeleteEmployment = (index) => {
+  const updated = employments.filter((_, i) => i !== index);
+  setEmployments(updated);
+};
+
 
 const handleSaveInternship = (data) => {
   if (editingIndex !== null) {
@@ -250,7 +293,6 @@ const handleSaveProject = (data) => {
     setProjects((prev) => [...prev, data]);
   }
 };
-// eslint-disable-next-line no-unused-vars
 const handleDeleteProject = (index) => {
   const updated = projects.filter((_, i) => i !== index);
   setProjects(updated);
@@ -468,6 +510,7 @@ const modalVariants = {
 
             {/* ================= EDUCATION SECTION ================= */}
 <motion.section
+  ref={sectionsRef.Education}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
 >
@@ -542,7 +585,6 @@ const modalVariants = {
 
 {/* ================= Skills ================= */}
 <motion.section
-  // eslint-disable-next-line react-hooks/refs
   ref={sectionsRef.KeySkills}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
@@ -609,6 +651,7 @@ const modalVariants = {
 
 {/* Languages */}
 <motion.section
+  ref={sectionsRef.Languages}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
 >
@@ -656,6 +699,7 @@ const modalVariants = {
 
 {/* Internships Section */}
 <motion.section
+  ref={sectionsRef.Internships}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
 >
@@ -763,6 +807,7 @@ const modalVariants = {
 
 {/* Projects Section - Profile Display */}
 <motion.section
+  ref={sectionsRef.Projects}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
 >
@@ -1050,8 +1095,7 @@ const modalVariants = {
 
 {/* Competitive Exams */}
 <motion.section
-  // eslint-disable-next-line react-hooks/refs
-  ref={sectionsRef.CompetitiveExam}
+  ref={sectionsRef.CompetitiveExams}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
 >
@@ -1154,146 +1198,163 @@ const modalVariants = {
   )}
 </motion.section>
 
-{/* Employment */}
+{/* ================= EMPLOYMENT SECTION ================= */}
 <motion.section
-  // eslint-disable-next-line react-hooks/refs
   ref={sectionsRef.Employment}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
 >
   <div className="flex justify-between items-center mb-4">
-    <h2 className="text-xl font-semibold text-white">Employment</h2>
+    <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+      <Briefcase size={20} /> Employment
+    </h2>
+
     <button
-      onClick={() => {
-        setEditingEmploymentIndex(null);
-        setEmploymentForm({
-          role: "",
-          company: "",
-          fromMonth: "",
-          fromYear: "",
-          toMonth: "",
-          toYear: "",
-          currentlyWorking: false,
-          description: "",
-        });
-        setShowEmploymentModal(true);
-      }}
-      className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+      onClick={handleAddEmployment}
+      className="flex items-center gap-2 text-blue-400 text-sm hover:text-blue-300"
     >
-      + Add
+      <Plus size={16} /> Add Employment
     </button>
   </div>
 
-  {employment.length === 0 ? (
-    <p className="text-gray-500 text-sm">No employment records yet.</p>
+  {employments.length === 0 ? (
+    <p className="text-gray-500 text-sm">
+      No employment details added yet.
+    </p>
   ) : (
     <div className="space-y-4">
-      {employment.map((job, index) => (
-        <div key={index} className="border border-gray-700 p-4 rounded-lg bg-[#1c2128] relative">
-          <div className="absolute top-4 right-4 flex gap-3">
-            <button onClick={() => handleEditEmployment(index)} className="text-blue-400 text-sm hover:underline">
-              Edit
-            </button>
-            <button onClick={() => handleDeleteEmployment(index)} className="text-red-400 text-sm hover:underline">
-              Delete
-            </button>
+      {employments.map((job, index) => (
+        <div
+          key={index}
+          className="bg-gray-900 border border-gray-700 p-4 rounded-lg"
+        >
+          <div className="flex justify-between">
+            <div>
+              <p className="text-white font-semibold">{job.role}</p>
+              <p className="text-gray-400 text-sm">{job.company}</p>
+              <p className="text-gray-500 text-xs mt-1">
+                {job.fromMonth} {job.fromYear} -{" "}
+                {job.currentlyWorking
+                  ? "Present"
+                  : `${job.toMonth} ${job.toYear}`}
+              </p>
+            </div>
+
+            <div className="flex gap-4">
+              <Edit2
+                size={16}
+                className="text-blue-400 cursor-pointer"
+                onClick={() => handleEditEmployment(index)}
+              />
+              <Trash2
+                size={16}
+                className="text-red-400 cursor-pointer"
+                onClick={() => handleDeleteEmployment(index)}
+              />
+            </div>
           </div>
 
-          <p className="text-lg font-semibold text-white">{job.role}</p>
-          <p className="text-blue-400">{job.company}</p>
-          <p className="text-gray-400 text-sm">
-            {job.fromMonth} {job.fromYear} - {job.currentlyWorking ? "Present" : `${job.toMonth} ${job.toYear}`}
-          </p>
-          <p className="mt-2 text-sm text-gray-300">{job.description}</p>
+          {job.description && (
+            <p className="text-gray-400 text-sm mt-3">
+              {job.description}
+            </p>
+          )}
         </div>
       ))}
     </div>
   )}
-
-  {/* Employment Modal (simplified) */}
+</motion.section>
+<AnimatePresence>
   {showEmploymentModal && (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#161b22] rounded-2xl w-full max-w-lg p-6 border border-gray-700 relative">
-        <X
-          className="absolute right-5 top-5 cursor-pointer text-gray-400 hover:text-white"
-          size={24}
-          onClick={() => setShowEmploymentModal(false)}
-        />
-        <h2 className="text-2xl font-bold text-white mb-4">
-          {editingEmploymentIndex !== null ? "Edit" : "Add"} Employment
-        </h2>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+      <EmploymentModal
+        employmentForm={employmentForm}
+        setEmploymentForm={setEmploymentForm}
+        editingEmploymentIndex={editingEmploymentIndex}
+        onClose={() => setShowEmploymentModal(false)}
+        onSave={handleSaveEmployment}
+      />
+    </div>
+  )}
+</AnimatePresence>
 
-        <div className="space-y-4">
-          {["role","company","fromMonth","fromYear","toMonth","toYear","description"].map((field) => (
-            <div key={field}>
-              <label className="block text-sm text-gray-400 mb-1.5">{field}</label>
-              <input
-                type="text"
-                value={employmentForm[field] || ""}
-                onChange={(e) =>
-                  setEmploymentForm({ ...employmentForm, [field]: e.target.value })
-                }
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-gray-200"
-              />
-            </div>
-          ))}
+{/* Resume */}
+<motion.section
+  ref={sectionsRef.Resume}
+  variants={sectionVariants}
+  className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
+>
+  <h2 className="text-xl font-semibold text-white mb-4">
+    Resume
+  </h2>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={employmentForm.currentlyWorking || false}
-              onChange={(e) =>
-                setEmploymentForm({ ...employmentForm, currentlyWorking: e.target.checked })
-              }
-            />
-            <span className="text-gray-300 text-sm">Currently working here</span>
+  {/* If Resume Exists */}
+  {resume ? (
+    <>
+      <div className="flex items-center justify-between bg-gray-900 p-5 rounded-lg border border-gray-700">
+        <div
+          onClick={() => window.open(resume.url)}
+          className="flex items-center gap-4 cursor-pointer"
+        >
+          <FileText size={36} className="text-blue-500" />
+          <div>
+            <p className="text-white">{resume?.name}</p>
+            <p className="text-sm text-gray-500">
+              Uploaded on {resume.uploaded}
+            </p>
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 mt-6">
-          <button className="text-gray-400 px-6 py-2.5" onClick={() => setShowEmploymentModal(false)}>Cancel</button>
-          <button
-            className="bg-blue-600 px-8 py-2.5 rounded-lg text-white"
-            onClick={() => handleSaveEmployment(employmentForm)}
-          >
-            Save
-          </button>
-        </div>
+        {/* Delete Button */}
+        <button
+          onClick={handleDeleteResume}
+          className="text-red-400 hover:text-red-600"
+        >
+          <Trash2 size={20} />
+        </button>
       </div>
+
+      {/* Action Buttons */}
+      <div className="mt-4 flex gap-6 text-sm">
+        <button
+          onClick={() => window.open(resume.url)}
+          className="text-blue-400 flex items-center gap-2"
+        >
+          <Download size={16} /> View / Download
+        </button>
+
+        <button
+          onClick={() => fileInputRef.current.click()}
+          className="text-blue-400 flex items-center gap-2"
+        >
+          <Upload size={16} /> Update Resume
+        </button>
+      </div>
+    </>
+  ) : (
+    /* If No Resume */
+    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-600 rounded-lg p-8 text-center">
+      <Upload size={40} className="text-blue-500 mb-3" />
+      <p className="text-gray-400 mb-3">No resume uploaded</p>
+
+      <button
+        onClick={() => fileInputRef.current.click()}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+      >
+        Upload Resume
+      </button>
     </div>
   )}
+
+  {/* Hidden File Input */}
+  <input
+    type="file"
+    accept=".pdf,.doc,.docx"
+    ref={fileInputRef}
+    onChange={handleResumeUpload}
+    className="hidden"
+  />
 </motion.section>
-
-            {/* Resume */}
-            <motion.section
-              // eslint-disable-next-line react-hooks/refs
-              ref={sectionsRef.Resume}
-              variants={sectionVariants}
-              className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
-            >
-              <h2 className="text-xl font-semibold text-white mb-4">
-                Resume
-              </h2>
-
-              <div className="flex items-center gap-4 bg-gray-900 p-5 rounded-lg border border-gray-700">
-                <FileText size={36} className="text-blue-500" />
-                <div>
-                  <p>{resume.name}</p>
-                  <p className="text-sm text-gray-500">
-                    Uploaded on {resume.uploaded}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-6 text-sm">
-                <button className="text-blue-400 flex items-center gap-2">
-                  <Download size={16} /> Download
-                </button>
-                <button className="text-blue-400 flex items-center gap-2">
-                  <Upload size={16} /> Update resume
-                </button>
-              </div>
-            </motion.section>
 
           </motion.main>
         </div>
@@ -1429,6 +1490,9 @@ const modalVariants = {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="fixed bottom-6 right-6">
+</div>
 
     </div>
   );
