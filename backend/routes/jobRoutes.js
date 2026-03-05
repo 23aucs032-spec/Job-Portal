@@ -676,6 +676,10 @@ router.post("/filter", async (req, res) => {
     if (filters.workMode?.length) query.workMode = { $in: createRegexArray(filters.workMode) };
     // Company Type filter
     if (filters.companyType?.length) query.companyType = { $in: createRegexArray(filters.companyType) };
+    // Location filter
+    if (filters.location?.length) {
+      query.location = { $in: createRegexArray(filters.location) };
+    }
     // Role Category filter
     if (filters.roleCategory?.length) query.roleCategory = { $in: createRegexArray(filters.roleCategory) };
     // Education filter

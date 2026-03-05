@@ -53,6 +53,9 @@ const Header = () => {
     } else if (user.role === "recruiter") {
       navigate("/recruiter/dashboard");
     }
+    else if (user.role === "employer") {
+      navigate("/employer/dashboard");
+    }
   };
 
   const buttonAnim = {

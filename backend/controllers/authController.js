@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Profile = require("../models/Profile");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -7,49 +8,27 @@ const jwt = require("jsonwebtoken");
 ====================== */
 exports.register = async (req, res) => {
   try {
-    const {
-      fullName,
-      email,
-      password,
-      mobile,
-      role,
-      city,
-      experience,
-    } = req.body;
+    const { fullName, email, password, mobile, role, city, experience } = req.body;
 
-    /* -------- REQUIRED FIELD CHECK -------- */
     if (!fullName || !email || !password || !mobile || !role || !city) {
-      return res.status(400).json({
-        message: "All required fields must be filled",
-      });
+      return res.status(400).json({ message: "All required fields must be filled" });
     }
 
     if (!["JobSeeker", "Employer"].includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    // Employer must provide experience
     if (role === "Employer" && !experience) {
-      return res.status(400).json({
-        message: "Experience is required for Employer",
-      });
+      return res.status(400).json({ message: "Experience is required for Employer" });
     }
 
-    /* -------- CHECK EXISTING USER -------- */
-    const existingUser = await User.findOne({
-      email: email.toLowerCase(),
-    });
-
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists",
-      });
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    /* -------- HASH PASSWORD -------- */
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    /* -------- CREATE USER -------- */
     const user = await User.create({
       fullName,
       email: email.toLowerCase(),
@@ -60,9 +39,23 @@ exports.register = async (req, res) => {
       experience: role === "Employer" ? experience : null,
     });
 
-    /* -------- GENERATE TOKEN -------- */
+    // ✅ AUTO CREATE PROFILE AFTER REGISTER
+    await Profile.create({
+      user: user._id,
+      personalDetails: {
+        name: user.fullName,
+        email: user.email,
+        mobile: user.mobile,
+        location: user.city,
+      },
+    });
+
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,  // ✅ IMPORTANT
+        email: user.email,
+        role: user.role,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -75,8 +68,6 @@ exports.register = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        city: user.city,
-        experience: user.experience,
       },
     });
 
@@ -86,7 +77,6 @@ exports.register = async (req, res) => {
   }
 };
 
-
 /* ======================
    LOGIN
 ====================== */
@@ -95,45 +85,36 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required",
-      });
+      return res.status(400).json({ message: "Email and password required" });
     }
 
-    const user = await User.findOne({
-      email: email.toLowerCase(),
-    }).select("+password");
-
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
     if (!user) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "7d" }
     );
 
-    res.status(200).json({
+    res.json({
       success: true,
       token,
       user: {
         id: user._id,
         fullName: user.fullName,
-        email: user.email,
         role: user.role,
-        city: user.city,
-        experience: user.experience,
       },
     });
 

@@ -1,27 +1,30 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
+const defaultInternship = {
+  company: "",
+  fromMonth: "",
+  fromYear: "",
+  toMonth: "",
+  toYear: "",
+  project: "",
+  description: "",
+  skills: "",
+  url: "",
+};
 const InternshipsModal = ({
   isOpen,
   onClose,
   onSave,
   initialData,
 }) => {
-  const [internship, setInternship] = useState(
-    initialData || {
-      company: "",
-      fromMonth: "",
-      fromYear: "",
-      toMonth: "",
-      toYear: "",
-      project: "",
-      description: "",
-      skills: "",
-      url: "",
-    }
-  );
+  const [internship, setInternship] = useState({
+  ...defaultInternship,
+  ...initialData,
+});
 
   /* ===========================
      Prevent Background Scroll
@@ -41,12 +44,14 @@ const InternshipsModal = ({
   /* ===========================
      Update When Editing
   ============================ */
-  useEffect(() => {
-    if (initialData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setInternship(initialData);
-    }
-  }, [initialData]);
+ useEffect(() => {
+  if (initialData) {
+    setInternship({
+      ...defaultInternship,
+      ...initialData,
+    });
+  }
+}, [initialData]);
 
   const handleChange = (field, value) => {
     setInternship({ ...internship, [field]: value });
@@ -120,7 +125,7 @@ const InternshipsModal = ({
                   </label>
                   <input
                     type="text"
-                    value={internship.company}
+                    value={internship.company || ""}
                     onChange={(e) =>
                       handleChange("company", e.target.value)
                     }
@@ -136,7 +141,7 @@ const InternshipsModal = ({
                   </label>
                   <input
                     type="text"
-                    value={internship.project}
+                    value={internship.project || ""}
                     onChange={(e) =>
                       handleChange("project", e.target.value)
                     }
@@ -151,7 +156,7 @@ const InternshipsModal = ({
                     Describe your work
                   </label>
                   <textarea
-                    value={internship.description}
+                    value={internship.description || ""}
                     onChange={(e) =>
                       handleChange("description", e.target.value)
                     }
@@ -166,7 +171,7 @@ const InternshipsModal = ({
                   </label>
                   <input
                     type="text"
-                    value={internship.skills}
+                    value={internship.skills || ""}
                     onChange={(e) =>
                       handleChange("skills", e.target.value)
                     }
@@ -181,7 +186,7 @@ const InternshipsModal = ({
                   </label>
                   <input
                     type="url"
-                    value={internship.url}
+                    value={internship.url || ""}
                     onChange={(e) =>
                       handleChange("url", e.target.value)
                     }

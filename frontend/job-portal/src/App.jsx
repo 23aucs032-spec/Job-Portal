@@ -13,7 +13,7 @@ import Login from "./pages/Auth/Login";
 import JobSeekerDashboard from "./pages/JobSeeker/JobSeekerDashboard";
 import AppliedJobs from "./pages/JobSeeker/AppliedJobs";
 import JobDetails from "./pages/JobSeeker/JobDetails";
-import SavedJobs from "./pages/JobSeeker/SavedJobs";
+import SavedJobs from "././components/ProfilePage/SavedJobs";
 
 // Employer Pages
 import EmployerDashboard from "./pages/Employer/EmployerDashboard";
@@ -32,7 +32,7 @@ import RecruiterProfile from "./pages/recruiter/RecruiterProfile";
 
 // Protected Route
 import ProtectedRoute from "./routes/ProtectedRoute";
-import Profile from "./pages/JobSeeker/UserProfile";
+import Profile from "././components/ProfilePage/UserProfile";
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -86,6 +86,8 @@ const App = () => {
           <Route path="/applicants/:jobId" element={<ApplicationViewer />} />
 
           <Route path="/jobs" element={<JobListPage />} />
+
+          <Route path="/employer/profile" element={<EmployerProfilePage />} />
           
           <Route
             path="/company-profile"

@@ -1,6 +1,6 @@
-/* eslint-disable react-hooks/refs */
 /* eslint-disable no-unused-vars */
 import React, { useRef, useState, useEffect } from "react";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit2,
@@ -18,31 +18,47 @@ import {
   Plus,     
   Trash2  
 } from "lucide-react";
-import CareerPreferenceModal from "../../components/ProfilePage/CareerPreferenceModal";
-import EducationModal from "../../components/ProfilePage/EducationModal";
-import SkillsModal from "../../components/ProfilePage/SkillsModal";
-import LanguagesModal from "../../components/ProfilePage/LanguagesModal";
-import InternshipsModal from "../../components/ProfilePage/InternshipsModal";
-import ProjectsModal from "../../components/ProfilePage/ProjectsModal";
-import AcademicAchievements from "../../components/ProfilePage/AcademicAchievements";
-import EmploymentModal from "../../components/ProfilePage/Employment";
+import CareerPreferenceModal from "./CareerPreferenceModal";
+import EducationModal from "./EducationModal";
+import SkillsModal from "./SkillsModal";
+import LanguagesModal from "./LanguagesModal";
+import InternshipsModal from "./InternshipsModal";
+import ProjectsModal from "./ProjectsModal";
+import AcademicAchievements from "./AcademicAchievements";
+import EmploymentModal from "./Employment";
+import api from "../../pages/utils/axiosConfig";
+import ProfilePageHeader from "./ProfilePageHeader";
 
 const ProfilePageDark = () => {
   // ================= PROFILE STATE =================
   const [profileImage, setProfileImage] = useState(null);
   const [profileSummary, setProfileSummary] = useState("");
-  const [achievements, setAchievements] = useState([]);
+const [achievements, setAchievements] = useState([]);
+  const [profileCompletion, setProfileCompletion] = useState(0);
   const [profile, setProfile] = useState({
-    name: "Karthik",
-    degree: "B.Sc - Bachelor of Science",
-    college: "Virudhunagar Hindu Nadars' College (VHNSNC)",
-    location: "Virudhunagar",
-    mobile: "9025555530",
-    email: "23aucs032@vhnsnc.edu",
-    dob: "15/09/2005",
-    gender: "Male",
-    completion: 40,
-  });
+  name: "",
+  email: "",
+  mobile: "",
+  location: "",
+  dob: "",
+  gender: "",
+  degree: "",
+  college: "",
+  skills: [],
+  languages: [],
+  preferences: {
+    types: [],
+    availability: "",
+    locations: [],
+  },
+  education: [],
+  internships: [],
+  projects: [],
+  competitiveExams: [],
+  employments: [],
+  achievements: [],
+  profileSummary: "",
+});
 
 const [preferences, setPreferences] = useState({
   types: ["Full Time", "Internship"],
@@ -50,6 +66,85 @@ const [preferences, setPreferences] = useState({
   locations: ["Chennai", "Bangalore"],
 });
 
+  const [loading, setLoading] = useState(false);
+
+  // ✅ Fetch Profile
+  useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const { data } = await api.get("/api/profile/me");
+
+      if (!data) return;
+
+      // Main profile object
+      setProfile(data);
+
+      // Basic Sections
+      setSkills(data.skills || []);
+      setEducationList(data.education || []);
+      setInternships(data.internships || []);
+      setProjects(data.projects || []);
+      setLanguages(data.languages || []);
+      setEmployments(data.employments || []);
+      setCompetitiveExams(data.competitiveExams || []);
+      setAchievements(data.achievements || []);
+      setProfileSummary(data.profileSummary || "");
+
+      // Preferences
+      if (data.preferences) {
+        setPreferences(data.preferences);
+        setPreferenceForm(data.preferences);
+      }
+
+      // Profile Image
+      if (data.profileImage?.url) {
+        setProfileImage(`http://localhost:5000${data.profileImage.url}`);
+      }
+
+      // Resume
+      if (data.resume?.url) {
+        setResume({
+          name: data.resume.name,
+          url: data.resume.url,
+          uploaded: data.resume.uploadedAt
+            ? new Date(data.resume.uploadedAt).toLocaleDateString()
+            : "",
+        });
+      }
+
+    } catch (error) {
+      console.log("Profile not found", error);
+    }
+  };
+
+  fetchProfile();
+}, []);
+
+const handleSave = async () => {
+  try {
+    setLoading(true);
+
+    const { data } = await api.post("/api/profile/save", profile);
+
+    alert("Profile saved successfully!");
+    console.log("Saved profile:", data);
+
+  } catch (error) {
+    console.error("Save error:", error.response?.data);
+    alert(error.response?.data?.message || "Error saving profile");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handlePersonalDetailsSave = () => {
+  setProfile((prev) => ({
+    ...prev,
+    ...formData,
+  }));
+
+  closeModal("personalDetails");
+};
 
   const education = {
     course: "B.Sc Computer Science",
@@ -72,26 +167,72 @@ const [startYear, setStartYear] = useState("2023");
 const [endYear, setEndYear] = useState("2026");
 
   const [skills, setSkills] = useState([]);
-const [resume, setResume] = useState({
-  name: "",
-  uploaded: "",
-  url: ""
-});
+const [resume, setResume] = useState(null);
+const resumeUrl = resume?.url
+  ? `http://localhost:5000${resume.url}`
+  : null;
 const fileInputRef = useRef(null);
-const handleResumeUpload = (e) => {
+const handleResumeUpload = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  const uploadedResume = {
-    name: file.name,
-    uploaded: new Date().toLocaleDateString(),
-    url: URL.createObjectURL(file),
-  };
+  const formData = new FormData();
+  formData.append("resume", file);
 
-  setResume(uploadedResume);
+  try {
+    const { data } = await api.post(
+      "/api/profile/upload-resume",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    setResume({
+      name: data.name,
+      url: data.url,
+      uploaded: new Date(data.uploadedAt).toLocaleDateString(),
+    });
+
+  } catch (err) {
+    console.error("Resume upload failed");
+  }
 };
 const handleDeleteResume = () => {
-  setResume(null);
+  setResume({
+    name: "",
+    uploaded: "",
+    url: "",
+  });
+};
+
+const handleSaveEducation = () => {
+
+  const newEducation = {
+    degree: courseName || otherCourse,
+    specialization: specialization || otherSpecialization,
+    institute: collegeName,
+    instituteLocation: "",
+    startYear,
+    endYear,
+    courseType: selectedCourseType,
+    percentage: "",
+
+    school12Name: "",
+    school12Location: "",
+    school12StartYear: "",
+    school12EndYear: "",
+    school12Percentage: "",
+
+    school10Name: "",
+    school10Location: "",
+    school10StartYear: "",
+    school10EndYear: "",
+    school10Percentage: "",
+  };
+
+  setEducationList([...educationList, newEducation]);
+  closeModal("education");
 };
   
 const [languages, setLanguages] = useState([]);
@@ -102,14 +243,21 @@ const [modals, setModals] = useState({
   preference: false,
   education: false,
   skills: false,
-  languages: false, // ✅ important
+  languages: false,
+  accomplishments: false,   // ✅ add this
 });
 const [preferenceForm, setPreferenceForm] = useState(preferences);
 
   // Profile form data
-const [formData, setFormData] = useState(profile);
-
-
+const [formData, setFormData] = useState({
+  name: "",
+  email: "",
+  mobile: "",
+  location: "",
+  dob: "",
+  degree: "",
+  college: ""
+});
 
 
   const openPreferenceModal = () => {
@@ -118,7 +266,11 @@ const [formData, setFormData] = useState(profile);
 };
 
 const handlePreferenceSave = () => {
-  setPreferences(preferenceForm);
+  setProfile({
+    ...profile,
+    preferences: preferenceForm,
+  });
+
   closeModal("preference");
 };
 
@@ -128,18 +280,28 @@ const handlePreferenceSave = () => {
   const closeModal = (modal) =>
     setModals({ ...modals, [modal]: false });
 
-  const handleSave = () => {
-    setProfile(formData);
-    closeModal("personalDetails");
-  };
-
   // ================= IMAGE UPLOAD =================
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setProfileImage(URL.createObjectURL(file));
-    }
-  };
+  const handleImageChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  try {
+    const { data } = await api.post(
+      "/api/profile/upload-profile-image",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    setProfileImage(`http://localhost:5000${data.url}`);
+  } catch (err) {
+    console.error("Image upload failed");
+  }
+};
 
   // ================= SECTION REFS =================
   const sectionsRef = {
@@ -184,16 +346,8 @@ const [examForm, setExamForm] = useState({
 });
 
 // Handlers
-const handleSaveExam = (data) => {
-  if (editingExamIndex !== null) {
-    const updated = [...competitiveExams];
-    updated[editingExamIndex] = data;
-    setCompetitiveExams(updated);
-    setEditingExamIndex(null);
-  } else {
-    setCompetitiveExams([...competitiveExams, data]);
-  }
-  setShowExamModal(false);
+const handleSaveExam = (examData) => {
+  setCompetitiveExams([...competitiveExams, examData]);
 };
 
 const handleEditExam = (index) => {
@@ -238,16 +392,18 @@ const handleAddEmployment = () => {
 };
 
 // Save Employment
-const handleSaveEmployment = (formData) => {
-  if (editingEmploymentIndex !== null) {
-    const updated = [...employments];
-    updated[editingEmploymentIndex] = formData;
-    setEmployments(updated);
-  } else {
-    setEmployments([...employments, formData]);
-  }
+const handleEmploymentSave = (data) => {
+  const duration = data.currentlyWorking
+    ? `${data.fromMonth} ${data.fromYear} - Present`
+    : `${data.fromMonth} ${data.fromYear} - ${data.toMonth} ${data.toYear}`;
 
-  setShowEmploymentModal(false);
+  const newEmployment = {
+    company: data.company,
+    role: data.role,
+    duration,
+  };
+
+  setEmployments([...employments, newEmployment]);
 };
 
 // Edit Employment
@@ -262,17 +418,92 @@ const handleDeleteEmployment = (index) => {
   const updated = employments.filter((_, i) => i !== index);
   setEmployments(updated);
 };
+useEffect(() => {
+  setProfile((prev) => ({
+    ...prev,
+    skills,
+  }));
+}, [skills]);
+useEffect(() => {
+  setProfile((prev) => ({
+    ...prev,
+    education: educationList,
+  }));
+}, [educationList]);
+useEffect(() => {
+  setProfile((prev) => ({
+    ...prev,
+    internships: internships,
+  }));
+}, [internships]);
+useEffect(() => {
+  setProfile((prev) => ({
+    ...prev,
+    languages: languages
+  }));
+}, [languages]);
+useEffect(() => {
+  setProfile((prev) => ({ ...prev, projects }));
+}, [projects]);
 
+useEffect(() => {
+  setProfile((prev) => ({ ...prev, employments }));
+}, [employments]);
+
+useEffect(() => {
+  setProfile((prev) => ({ ...prev, competitiveExams }));
+}, [competitiveExams]);
+
+useEffect(() => {
+  setProfile((prev) => ({ ...prev, achievements }));
+}, [achievements]);
+
+useEffect(() => {
+  setProfile((prev) => ({ ...prev, profileSummary }));
+}, [profileSummary]);
+
+useEffect(() => {
+  let total = 0;
+
+  if (profile.name && profile.email && profile.mobile && profile.location)
+    total += 20;
+
+  if (profile.profileSummary?.length > 50)
+    total += 10;
+
+  if (profile.skills?.length >= 3)
+    total += 15;
+
+  if (profile.education?.length > 0)
+    total += 15;
+
+  if (profile.internships?.length > 0)
+    total += 10;
+
+  if (profile.projects?.length > 0)
+    total += 10;
+
+  if (profile.employments?.length > 0)
+    total += 10;
+
+  if (resume?.url)
+    total += 10;
+
+  setProfileCompletion(total);
+}, [profile, resume]);
 
 const handleSaveInternship = (data) => {
+
   if (editingIndex !== null) {
     const updated = [...internships];
     updated[editingIndex] = data;
     setInternships(updated);
-    setEditingIndex(null);
   } else {
-    setInternships((prev) => [...prev, data]);
+    setInternships([...internships, data]);
   }
+
+  setShowInternshipModal(false);
+  setEditingIndex(null);
 };
 const handleEditInternship = (index) => {
   setEditingIndex(index);
@@ -322,7 +553,7 @@ const modalVariants = {
 
   return (
     <div className="min-h-screen bg-[#0b1120] text-gray-300 px-10 py-6">
-
+      <ProfilePageHeader />
       {/* ================= PROFILE HEADER ================= */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -358,9 +589,36 @@ const modalVariants = {
               <Camera size={16} className="text-white" />
             </label>
 
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0d1117] px-4 py-1 text-sm font-bold rounded-full border border-gray-700">
-              {profile.completion}%
-            </div>
+<div className="mt-6 bg-[#161b22] p-6 rounded-xl border border-gray-800">
+  
+  <div className="flex justify-between mb-2">
+    <h2 className="text-lg font-semibold text-white">
+      Profile Completion
+    </h2>
+    <span className="text-blue-400 font-bold">
+      {profileCompletion}%
+    </span>
+  </div>
+
+  <div className="w-full bg-gray-700 rounded-full h-4">
+    <div
+      className="bg-blue-600 h-4 rounded-full transition-all duration-500"
+      style={{ width: `${profileCompletion}%` }}
+    />
+  </div>
+
+  {profileCompletion < 100 && (
+    <p className="text-gray-400 text-sm mt-3">
+      Complete your profile to increase visibility to recruiters.
+    </p>
+  )}
+
+  {profileCompletion === 100 && (
+    <p className="text-green-400 text-sm mt-3">
+      🎉 Your profile is fully completed!
+    </p>
+  )}
+</div>
           </div>
 
           {/* Main Info */}
@@ -379,8 +637,19 @@ const modalVariants = {
               />
             </div>
 
-            <p className="text-lg text-gray-300 mt-2">{profile.degree}</p>
-            <p className="text-gray-400">{profile.college}</p>
+            {/* Degree */}
+  {profile.degree && (
+    <p className="text-lg text-gray-300 mt-2">
+      {profile.degree}
+    </p>
+  )}
+
+  {/* College */}
+  {profile.college && (
+    <p className="text-gray-400">
+      {profile.college}
+    </p>
+  )}
 
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center gap-2">
@@ -510,14 +779,16 @@ const modalVariants = {
 
             {/* ================= EDUCATION SECTION ================= */}
 <motion.section
-  ref={sectionsRef.Education}
+  ref={sectionsRef?.Education}
   variants={sectionVariants}
   className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
 >
-  <div className="flex justify-between items-center mb-4">
-    <h2 className="text-xl font-semibold text-white">Education</h2>
+  {/* Header */}
+  <div className="flex justify-between items-center mb-6">
+    <h2 className="text-xl font-semibold text-white">
+      Education
+    </h2>
 
-    {/* Add Education Button */}
     <button
       onClick={() => openModal("education")}
       className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium"
@@ -525,62 +796,109 @@ const modalVariants = {
       <Edit2 size={16} />
       Add Education
     </button>
-          <EducationModal
-  modals={modals}
-  closeModal={closeModal}
-  modalVariants={modalVariants}
-  courseName={courseName}
-  setCourseName={setCourseName}
-  otherCourse={otherCourse}
-  setOtherCourse={setOtherCourse}
-  specialization={specialization}
-  setSpecialization={setSpecialization}
-  otherSpecialization={otherSpecialization}
-  setOtherSpecialization={setOtherSpecialization}
-  collegeName={collegeName}
-  setCollegeName={setCollegeName}
-  selectedGrading={selectedGrading}
-  setSelectedGrading={setSelectedGrading}
-  selectedCourseType={selectedCourseType}
-  setSelectedCourseType={setSelectedCourseType}
-  startYear={startYear}
-  setStartYear={setStartYear}
-  endYear={endYear}
-  setEndYear={setEndYear}
-  educationList={educationList}
-  setEducationList={setEducationList}
-/>
   </div>
 
-  {educationList.length === 0 ? (
+  {/* Education List */}
+  {!educationList || educationList.length === 0 ? (
     <p className="text-gray-400 text-sm">
       No education details added yet.
     </p>
   ) : (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {educationList.map((edu, index) => (
         <div
-          key={index}
-          className="bg-[#0d1117] p-4 rounded-lg border border-gray-700"
+          key={edu._id || index}
+          className="bg-[#0d1117] p-6 rounded-xl border border-gray-700 space-y-6"
         >
-          <h3 className="text-white font-medium">
-            {edu.course}
-          </h3>
-          <p className="text-gray-400 text-sm">
-            {edu.specialization}
-          </p>
-          <p className="text-gray-400 text-sm">
-            {edu.college}
-          </p>
-          <p className="text-gray-500 text-xs mt-1">
-            {edu.startYear} - {edu.endYear} • {edu.courseType}
-          </p>
+          {/* ================= College ================= */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-white">
+              {edu.degree || "Course not specified"}
+            </h3>
+
+            {edu.specialization && (
+              <p className="text-gray-400 text-sm">
+                {edu.specialization}
+              </p>
+            )}
+
+            <p className="text-gray-400 text-sm">
+              {edu.institute}{" "}
+              {edu.instituteLocation && `• ${edu.instituteLocation}`}
+            </p>
+
+            <p className="text-gray-500 text-xs">
+              {edu.startYear} - {edu.endYear}{" "}
+              {edu.courseType && `• ${edu.courseType}`}
+            </p>
+
+            {edu.percentage && (
+              <p className="text-blue-400 text-sm">
+                {edu.percentage}%
+              </p>
+            )}
+          </div>
+
+          {/* ================= 12th ================= */}
+          {(edu.school12Name || edu.school12Percentage) && (
+            <div className="border-t border-gray-700 pt-4">
+              <h4 className="text-gray-300 font-medium mb-1">
+                12th Details
+              </h4>
+
+              <p className="text-gray-400 text-sm">
+                {edu.school12Name}{" "}
+                {edu.school12Location && `• ${edu.school12Location}`}
+              </p>
+
+              <p className="text-gray-500 text-xs">
+                {edu.school12StartYear} - {edu.school12EndYear}
+              </p>
+
+              {edu.school12Percentage && (
+                <p className="text-blue-400 text-sm">
+                  {edu.school12Percentage}%
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ================= 10th ================= */}
+          {(edu.school10Name || edu.school10Percentage) && (
+            <div className="border-t border-gray-700 pt-4">
+              <h4 className="text-gray-300 font-medium mb-1">
+                10th Details
+              </h4>
+
+              <p className="text-gray-400 text-sm">
+                {edu.school10Name}{" "}
+                {edu.school10Location && `• ${edu.school10Location}`}
+              </p>
+
+              <p className="text-gray-500 text-xs">
+                {edu.school10StartYear} - {edu.school10EndYear}
+              </p>
+
+              {edu.school10Percentage && (
+                <p className="text-blue-400 text-sm">
+                  {edu.school10Percentage}%
+                </p>
+              )}
+            </div>
+          )}
         </div>
       ))}
-
-
     </div>
   )}
+
+  {/* Education Modal */}
+  <EducationModal
+    modals={modals}
+    closeModal={closeModal}
+    modalVariants={modalVariants}
+    educationList={educationList}
+    setEducationList={setEducationList}
+  />
 </motion.section>
 
 {/* ================= Skills ================= */}
@@ -679,22 +997,21 @@ const modalVariants = {
   </div>
 
   {languages.length === 0 ? (
-    <p className="text-gray-400 text-sm">
-      No languages added yet.
-    </p>
-  ) : (
-    <div className="flex flex-wrap gap-2">
-      {languages.map((lang) => (
-        <span
-          key={lang}
-          className="bg-gray-800 px-4 py-2 rounded-full text-sm border border-gray-700 text-gray-200"
-        >
-          {lang}
-        </span>
-      ))}
-    </div>
-    
-  )}
+  <p className="text-gray-400 text-sm">
+    No languages added yet.
+  </p>
+) : (
+  <div className="flex flex-wrap gap-2">
+    {languages.map((lang, index) => (
+      <span
+        key={index}
+        className="bg-gray-800 px-4 py-2 rounded-full text-sm border border-gray-700 text-gray-200"
+      >
+        {typeof lang === "string" ? lang : lang.name}
+      </span>
+    ))}
+  </div>
+)}
 </motion.section>
 
 {/* Internships Section */}
@@ -717,21 +1034,17 @@ const modalVariants = {
     >
       + Add
     </button>
-    <InternshipsModal
-  isOpen={showInternshipModal}
-  onClose={() => {
-    setShowInternshipModal(false);
-    setEditingIndex(null);
-  }}
-  modalVariants={modalVariants}
-  onSave={handleSaveInternship}
-  initialData={
-    editingIndex !== null
-      ? internships[editingIndex]
-      : null
-  }
-/>
   </div>
+
+  <InternshipsModal
+    isOpen={showInternshipModal}
+    onClose={() => {
+      setShowInternshipModal(false);
+      setEditingIndex(null);
+    }}
+    onSave={handleSaveInternship}
+    initialData={editingIndex !== null ? internships[editingIndex] : null}
+  />
 
   {internships.length === 0 ? (
     <p className="text-gray-500 text-sm">
@@ -744,7 +1057,8 @@ const modalVariants = {
           key={index}
           className="border border-gray-700 rounded-lg p-5 bg-[#1c2128] relative"
         >
-          {/* Edit/Delete Buttons */}
+
+          {/* Edit/Delete */}
           <div className="absolute top-4 right-4 flex gap-4">
             <button
               onClick={() => handleEditInternship(index)}
@@ -752,6 +1066,7 @@ const modalVariants = {
             >
               Edit
             </button>
+
             <button
               onClick={() => handleDeleteInternship(index)}
               className="text-red-400 text-sm hover:underline"
@@ -760,22 +1075,29 @@ const modalVariants = {
             </button>
           </div>
 
+          {/* Project */}
           <h3 className="text-white font-semibold text-lg">
             {item.project}
           </h3>
 
+          {/* Company */}
           <p className="text-gray-400 text-sm">
             {item.company}
           </p>
 
+          {/* Duration */}
           <p className="text-gray-500 text-xs mt-1">
             {item.fromMonth} {item.fromYear} - {item.toMonth} {item.toYear}
           </p>
 
-          <p className="text-gray-300 text-sm mt-3 leading-relaxed">
-            {item.description}
-          </p>
+          {/* Description */}
+          {item.description && (
+            <p className="text-gray-300 text-sm mt-3 leading-relaxed">
+              {item.description}
+            </p>
+          )}
 
+          {/* Skills */}
           {item.skills && (
             <div className="flex flex-wrap gap-2 mt-3">
               {item.skills.split(",").map((skill, i) => (
@@ -789,6 +1111,7 @@ const modalVariants = {
             </div>
           )}
 
+          {/* URL */}
           {item.url && (
             <a
               href={item.url}
@@ -1029,69 +1352,77 @@ const modalVariants = {
 )}
 
       {/* Academic Achievements / Accomplishments Section */}
-      <motion.section
-        ref={sectionsRef["Academic Achievements"]}
-        variants={sectionVariants}
-        className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
+<motion.section
+  ref={sectionsRef["Academic Achievements"]}
+  variants={sectionVariants}
+  className="bg-[#161b22] border border-gray-800 rounded-xl p-6"
+>
+  <div className="flex justify-between items-start mb-4">
+
+    <h2 className="text-xl font-semibold text-white">
+      Academic Achievements / Accomplishments
+    </h2>
+
+    <div
+      className="flex items-center gap-2 text-blue-400 cursor-pointer hover:text-blue-300 transition"
+      onClick={() => openModal("accomplishments")}
+    >
+      <span className="text-sm font-medium">Add</span>
+
+      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-500 transition">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4 text-white"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <div className="space-y-3">
+  {achievements?.length > 0 ? (
+    achievements.map((item, index) => (
+      <div
+        key={index}
+        className="text-sm text-gray-300 border-b border-gray-800 pb-2 last:border-none"
       >
-        {/* Header Row */}
-        <div className="flex justify-between items-start mb-4">
+        <p className="font-medium text-white">
+          {item?.title}
+        </p>
 
-          {/* Left Side Title */}
-          <h2 className="text-xl font-semibold text-white">
-            Academic Achievements / Accomplishments
-          </h2>
+        {item?.description && (
+          <p className="text-gray-400 text-xs mt-1">
+            {item.description}
+          </p>
+        )}
 
-          {/* Right Corner - Add Button */}
-          <div
-            className="flex items-center gap-2 text-blue-400 cursor-pointer hover:text-blue-300 transition"
-            onClick={() => openModal("accomplishments")}
-          >
-            <span className="text-sm font-medium">Add</span>
+        {item?.year && (
+          <p className="text-blue-400 text-xs mt-1">
+            {item.year}
+          </p>
+        )}
+      </div>
+    ))
+  ) : (
+    <div className="text-gray-500 text-sm">
+      No academic achievements added yet.
+    </div>
+  )}
+</div>
+</motion.section>
 
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-500 transition">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Existing Achievements List */}
-        <div className="space-y-3">
-          {achievements.length > 0 ? (
-            achievements.map((item, index) => (
-              <div
-                key={index}
-                className="text-sm text-gray-300 border-b border-gray-800 pb-2 last:border-none"
-              >
-                {item}
-              </div>
-            ))
-          ) : (
-            <div className="text-gray-500 text-sm">No academic achievements added yet.</div>
-          )}
-        </div>
-      </motion.section>
-
-      {/* Academic Achievements Modal */}
-      <AcademicAchievements
-        modals={modals}
-        closeModal={closeModal}
-        onSave={(data) => setAchievements(data)}
-      />
+{/* Modal */}
+<AcademicAchievements
+  modals={modals}
+  closeModal={closeModal}
+  onSave={(data) => setAchievements(data)}
+/>
 
 {/* Competitive Exams */}
 <motion.section
@@ -1272,7 +1603,7 @@ const modalVariants = {
         setEmploymentForm={setEmploymentForm}
         editingEmploymentIndex={editingEmploymentIndex}
         onClose={() => setShowEmploymentModal(false)}
-        onSave={handleSaveEmployment}
+        onSave={handleEmploymentSave}
       />
     </div>
   )}
@@ -1289,7 +1620,7 @@ const modalVariants = {
   </h2>
 
   {/* If Resume Exists */}
-  {resume ? (
+ {resume && resume.url ? (
     <>
       <div className="flex items-center justify-between bg-gray-900 p-5 rounded-lg border border-gray-700">
         <div
@@ -1315,21 +1646,34 @@ const modalVariants = {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-4 flex gap-6 text-sm">
-        <button
-          onClick={() => window.open(resume.url)}
-          className="text-blue-400 flex items-center gap-2"
-        >
-          <Download size={16} /> View / Download
-        </button>
+<div className="mt-4 flex gap-6 text-sm">
 
-        <button
-          onClick={() => fileInputRef.current.click()}
-          className="text-blue-400 flex items-center gap-2"
-        >
-          <Upload size={16} /> Update Resume
-        </button>
-      </div>
+  {/* View */}
+  <button
+    onClick={() => window.open(resumeUrl, "_blank")}
+    className="text-blue-400 flex items-center gap-2"
+  >
+    <Download size={16} /> View Resume
+  </button>
+
+  {/* Download */}
+  <a
+    href={resumeUrl}
+    download={resume?.name}
+    className="text-green-400 flex items-center gap-2"
+  >
+    <Download size={16} /> Download Resume
+  </a>
+
+  {/* Update */}
+  <button
+    onClick={() => fileInputRef.current.click()}
+    className="text-blue-400 flex items-center gap-2"
+  >
+    <Upload size={16} /> Update Resume
+  </button>
+
+</div>
     </>
   ) : (
     /* If No Resume */
@@ -1362,138 +1706,195 @@ const modalVariants = {
 
             {/* ================= PERSONAL DETAILS MODAL ================= */}
       <AnimatePresence>
-        {modals.personalDetails && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+  {modals.personalDetails && (
+    <motion.div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="bg-gray-900 w-full max-w-xl rounded-xl shadow-xl p-8 
+                   max-h-[90vh] overflow-y-auto"
+      >
+        <h2 className="text-2xl font-bold text-white mb-1">
+          All about you
+        </h2>
+
+        <p className="text-gray-400 text-sm mb-8">
+          Basic information
+        </p>
+
+        <div className="space-y-6 text-gray-300">
+
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              Full name
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
+            />
+          </div>
+
+          {/* Degree */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              Degree
+            </label>
+            <input
+              type="text"
+              value={formData.degree || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, degree: e.target.value })
+              }
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
+            />
+          </div>
+
+          {/* College */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              College Name
+            </label>
+            <input
+              type="text"
+              value={formData.college || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, college: e.target.value })
+              }
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              Email
+            </label>
+            <input
+              type="email"
+              value={formData.email || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
+            />
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              Gender
+            </label>
+            <div className="flex gap-3">
+              {["Male", "Female", "Other"].map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, gender: g })
+                  }
+                  className={`px-6 py-2 rounded-full text-sm border ${
+                    formData.gender === g
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : "bg-gray-800 border-gray-600"
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* DOB */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              Date of birth
+            </label>
+            <input
+              type="date"
+              value={formData.dob}
+              onChange={(e) =>
+                setFormData({ ...formData, dob: e.target.value })
+              }
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              Current location
+            </label>
+            <input
+              type="text"
+              value={formData.location}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
+            />
+          </div>
+
+          {/* Mobile */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-1.5">
+              Mobile number
+            </label>
+            <input
+              type="tel"
+              value={formData.mobile}
+              onChange={(e) =>
+                setFormData({ ...formData, mobile: e.target.value })
+              }
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
+            />
+          </div>
+
+        </div>
+
+        {/* Footer Buttons */}
+        <div className="flex justify-end gap-4 mt-10 pt-6 border-t border-gray-700">
+          <button
+            className="text-gray-400 px-6 py-2.5"
+            onClick={() => closeModal("personalDetails")}
           >
-            <motion.div
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="bg-[#161b22] rounded-2xl w-full max-w-lg p-6 border border-gray-700 relative shadow-2xl"
-            >
-              <X
-                className="absolute right-5 top-5 cursor-pointer text-gray-400 hover:text-white"
-                size={24}
-                onClick={() => closeModal("personalDetails")}
-              />
+            Cancel
+          </button>
 
-              <h2 className="text-2xl font-bold text-white mb-1">
-                All about you
-              </h2>
-              <p className="text-gray-400 text-sm mb-8">
-                Basic information
-              </p>
+          <button
+            className="bg-blue-600 px-8 py-2.5 rounded-lg text-white"
+            onClick={handlePersonalDetailsSave}
+          >
+            Save
+          </button>
+        </div>
 
-              <div className="space-y-6 text-gray-300">
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1.5">
-                    Full name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1.5">
-                    Gender
-                  </label>
-                  <div className="flex gap-3">
-                    {["Male", "Female", "Other"].map((g) => (
-                      <button
-                        key={g}
-                        onClick={() =>
-                          setFormData({ ...formData, gender: g })
-                        }
-                        className={`px-6 py-2 rounded-full text-sm border ${
-                          formData.gender === g
-                            ? "bg-blue-600 border-blue-600 text-white"
-                            : "bg-gray-800 border-gray-600"
-                        }`}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1.5">
-                    Date of birth
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.dob}
-                    onChange={(e) =>
-                      setFormData({ ...formData, dob: e.target.value })
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1.5">
-                    Current location
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) =>
-                      setFormData({ ...formData, location: e.target.value })
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1.5">
-                    Mobile number
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.mobile}
-                    onChange={(e) =>
-                      setFormData({ ...formData, mobile: e.target.value })
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3"
-                  />
-                </div>
-
-              </div>
-
-              <div className="flex justify-end gap-4 mt-10 pt-6 border-t border-gray-700">
-                <button
-                  className="text-gray-400 px-6 py-2.5"
-                  onClick={() => closeModal("personalDetails")}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="bg-blue-600 px-8 py-2.5 rounded-lg text-white"
-                  onClick={handleSave}
-                >
-                  Save
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       <div className="fixed bottom-6 right-6">
 </div>
-
+        <div className="fixed bottom-6 right-6">
+  <button
+    onClick={handleSave}
+    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl shadow-lg"
+  >
+    Save Profile
+  </button>
+</div>
     </div>
   );
 };
