@@ -364,3 +364,49 @@ exports.createJob = async (req, res) => {
   }
 
 };
+
+// ===============================
+// GET SIMILAR JOBS
+// ===============================
+
+exports.getSimilarJobs = async (req, res) => {
+
+  try {
+
+    const jobId = req.params.id;
+
+    const currentJob = await Job.findById(jobId);
+
+    if (!currentJob) {
+      return res.status(404).json({
+        message: "Job not found"
+      });
+    }
+
+    const similarJobs = await Job.find({
+
+      _id: { $ne: jobId },
+
+      $or: [
+        { department: currentJob.department },
+        { roleCategory: currentJob.roleCategory },
+        { location: currentJob.location }
+      ]
+
+    })
+    .limit(5)
+    .sort({ createdAt: -1 });
+
+    res.status(200).json(similarJobs);
+
+  }
+
+  catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};

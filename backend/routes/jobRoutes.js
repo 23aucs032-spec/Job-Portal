@@ -1,6 +1,7 @@
 const express = require("express");
 const Job = require("../models/Job");
 const auth = require("../middleware/authMiddleware");
+const jobController = require("../controllers/jobController");
 const router = express.Router();
 
 /* =====================================================
@@ -485,6 +486,56 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+
+/* =====================================================
+   SEARCH JOBS
+===================================================== */
+router.get("/search", async (req, res) => {
+  try {
+    const { keyword, location, experience } = req.query;
+
+    let query = {};
+
+    // 🔎 Keyword search
+    if (keyword) {
+      const regex = new RegExp(keyword, "i");
+
+      query.$or = [
+        { title: regex },
+        { companyName: regex },
+        { skills: regex },
+        { department: regex }
+      ];
+    }
+
+    // 📍 Location search
+    if (location) {
+      query.location = new RegExp(location, "i");
+    }
+
+    // 💼 Experience search
+    if (experience) {
+      const exp = Number(experience);
+
+      query.minExp = { $lte: exp };
+      query.maxExp = { $gte: exp };
+    }
+
+    const jobs = await Job.find(query)
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.json(jobs);
+
+  } catch (error) {
+    console.error("Search Error:", error);
+    res.status(500).json({
+      message: "Fetch failed",
+      error: error.message
+    });
+  }
+});
+
 /* =====================================================
    GENERIC COUNT FUNCTION (Reusable)
 ===================================================== */
@@ -797,5 +848,6 @@ router.put("/:id", auth, async (req, res) => {
     res.status(500).json({ message: "Update failed" });
   }
 });
+router.get("/similar/:id", jobController.getSimilarJobs);
 
 module.exports = router;

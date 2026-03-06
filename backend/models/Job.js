@@ -45,6 +45,4 @@ const jobSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-jobSchema.index({ location: "2dsphere" });
-
 module.exports = mongoose.model("Job", jobSchema);

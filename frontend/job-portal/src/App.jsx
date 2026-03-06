@@ -8,31 +8,32 @@ import LoadingScreen from "./pages/LandingPage/components/LoadingScreen";
 import LandingPage from "./pages/LandingPage/LandingPage";
 import SignUp from "./pages/Auth/SignUp";
 import Login from "./pages/Auth/Login";
+import FindJobs from "./pages/LandingPage/components/FindJobs";
 
 // Job Seeker Pages
 import JobSeekerDashboard from "./pages/JobSeeker/JobSeekerDashboard";
 import AppliedJobs from "./pages/JobSeeker/AppliedJobs";
 import JobDetails from "./pages/JobSeeker/JobDetails";
-import SavedJobs from "././components/ProfilePage/SavedJobs";
+import FindJobDetails from "./pages/LandingPage/components/FindJobDetails";
+import SavedJobs from "./components/ProfilePage/SavedJobs";
+import JobListPage from "./pages/JobSeeker/JobListPage";
 
 // Employer Pages
 import EmployerDashboard from "./pages/Employer/EmployerDashboard";
 import JobPostingForm from "./pages/recruiter/JobPostingForm";
 import ManageJobs from "./pages/recruiter/ManageJobs";
-import EditJob from "./pages/recruiter/EditJob"; 
+import EditJob from "./pages/recruiter/EditJob";
 import ApplicationViewer from "./pages/recruiter/ApplicantsView";
 import EmployerProfilePage from "./pages/Employer/EmployerProfilePage";
 import RegisterStep1 from "./pages/recruiter/RegisterStep1";
 import RegisterStep2 from "./pages/recruiter/RegisterStep2";
 import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
 import RecruiterLogin from "./pages/recruiter/RecruiterLogin";
-import JobListPage from "./pages/JobSeeker/JobListPage";
 import RecruiterProfile from "./pages/recruiter/RecruiterProfile";
-
 
 // Protected Route
 import ProtectedRoute from "./routes/ProtectedRoute";
-import Profile from "././components/ProfilePage/UserProfile";
+import Profile from "./components/ProfilePage/UserProfile";
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -61,16 +62,19 @@ const App = () => {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
 
+        {/* ✅ FIND JOBS PAGE */}
+        <Route path="/find-jobs" element={<FindJobs />} />
+        <Route path="/find-job/:id" element={<FindJobDetails />} />
+
         {/* ================= JOB SEEKER ================= */}
         <Route element={<ProtectedRoute requireRoles="jobseeker" />}>
           <Route path="/jobseeker/dashboard" element={<JobSeekerDashboard />}>
             <Route index element={<AppliedJobs />} />
             <Route path="applied-jobs" element={<AppliedJobs />} />
-        </Route>
+          </Route>
 
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/saved-jobs" element={<SavedJobs />} />  
-  {       /* Job Details route should be **top-level** or relative to dashboard */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/saved-jobs" element={<SavedJobs />} />
           <Route path="/job/:id" element={<JobDetails />} />
         </Route>
 
@@ -80,26 +84,22 @@ const App = () => {
             path="/employer/dashboard"
             element={<EmployerDashboard />}
           />
-          
+
           <Route path="/manage-jobs" element={<ManageJobs />} />
-
           <Route path="/applicants/:jobId" element={<ApplicationViewer />} />
-
           <Route path="/jobs" element={<JobListPage />} />
 
           <Route path="/employer/profile" element={<EmployerProfilePage />} />
-          
-          <Route
-            path="/company-profile"
-            element={<EmployerProfilePage />}
-          />
+          <Route path="/company-profile" element={<EmployerProfilePage />} />
         </Route>
 
-        <Route path="/recruiter/login" element={<RecruiterLogin />} />  
+        {/* ================= RECRUITER ================= */}
+        <Route path="/recruiter/login" element={<RecruiterLogin />} />
         <Route path="/recruiter/register" element={<RegisterStep1 />} />
         <Route path="/recruiter/register-step2" element={<RegisterStep2 />} />
         <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
         <Route path="/recruiter/profile" element={<RecruiterProfile />} />
+
         <Route path="/post-job" element={<JobPostingForm />} />
         <Route path="/edit-job/:id" element={<EditJob />} />
 

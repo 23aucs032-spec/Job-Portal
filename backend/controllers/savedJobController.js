@@ -1,104 +1,84 @@
-/*import SavedJob from "../models/SaveJob.js";
+const SavedJob = require("../models/SavedJob");
 
-export const saveJob = async (req, res) => {
+
+/* ================= SAVE JOB ================= */
+
+exports.saveJob = async (req, res) => {
+
   try {
-    const exists = await SavedJob.findOne({
-      job: req.params.jobId,
-      user: req.user._id,
+
+    const userId = req.user.id;
+    const { jobId } = req.body;
+
+    const alreadySaved = await SavedJob.findOne({
+      user: userId,
+      job: jobId
     });
 
-    if (exists) {
+    if (alreadySaved) {
       return res.status(400).json({ message: "Job already saved" });
     }
 
-    const saved = await SavedJob.create({
-      job: req.params.jobId,
-      user: req.user._id,
+    const savedJob = new SavedJob({
+      user: userId,
+      job: jobId
     });
 
-    res.status(201).json(saved);
-  } catch (err) {
-    res.status(500
-    .json({ message: err.message });
+    await savedJob.save();
+
+    res.json({ message: "Job saved successfully" });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
   }
+
 };
 
-export const unsaveJob = async (req, res) => {
-  try {
-    await SavedJob.findOneAndDelete({
-      job: req.params.jobId,
-      user: req.user._id,
-    });
 
-    res.json({ message: "Job removed from saved" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+/* ================= GET SAVED JOBS ================= */
 
-export const getMySavedJobs = async (req, res) => {
+exports.getSavedJobs = async (req, res) => {
+
   try {
-    const jobs = await SavedJob.find({ user: req.user._id })
+
+    const userId = req.user.id;
+
+    const jobs = await SavedJob.find({ user: userId })
       .populate("job");
 
     res.json(jobs);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
   }
-};
-*/
 
-
-const SavedJob = require("../models/SaveJob");
-
-const saveJob = async (req, res) => {
-  try {
-    const exists = await SavedJob.findOne({
-      job: req.params.jobId,
-      user: req.user._id,
-    });
-
-    if (exists) {
-      return res.status(400).json({ message: "Job already saved" });
-    }
-
-    const saved = await SavedJob.create({
-      job: req.params.jobId,
-      user: req.user._id,
-    });
-
-    res.status(201).json(saved);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
 };
 
-const unsaveJob = async (req, res) => {
+
+/* ================= REMOVE SAVED JOB ================= */
+
+exports.removeSavedJob = async (req, res) => {
+
   try {
+
+    const userId = req.user.id;
+    const { jobId } = req.params;
+
     await SavedJob.findOneAndDelete({
-      job: req.params.jobId,
-      user: req.user._id,
+      user: userId,
+      job: jobId
     });
 
-    res.json({ message: "Job removed from saved" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({ message: "Removed successfully" });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
   }
-};
 
-const getMySavedJobs = async (req, res) => {
-  try {
-    const jobs = await SavedJob.find({ user: req.user._id })
-      .populate("job");
-
-    res.json(jobs);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-module.exports = {
-  saveJob,
-  unsaveJob,
-  getMySavedJobs
 };

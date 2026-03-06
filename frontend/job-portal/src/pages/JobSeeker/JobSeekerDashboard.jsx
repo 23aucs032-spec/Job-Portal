@@ -32,10 +32,10 @@ const FilterBlock = ({
 }) => (
   <div className="mb-6">
     <div
-      className="flex justify-between items-center cursor-pointer mb-2"
+      className="flex items-center justify-between mb-2 cursor-pointer"
       onClick={() => toggleCollapse(stateKey)}
     >
-      <h3 className="font-semibold text-sm text-gray-200">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-200">{title}</h3>
       {collapse[stateKey] ? (
         <ChevronUp size={16} />
       ) : (
@@ -186,49 +186,49 @@ useEffect(() => {
 
     /* SAVE JOB */
 
-  const handleSaveJob = (e, job) => {
+const handleSaveJob = async (e, job) => {
 
-    e.stopPropagation();
+  e.stopPropagation();
 
+  try {
 
+    const token = localStorage.getItem("token");
 
-    let savedJobs =
-      JSON.parse(localStorage.getItem("savedJobs"))
-      || [];
-
-
-
-    const alreadySaved =
-      savedJobs.find(
-        (item) => item._id === job._id
-      );
-
-
-
-    if (alreadySaved) {
-
-      alert("Job already saved");
-
+    if (!token) {
+      alert("Please login first");
       return;
-
     }
 
-
-
-    savedJobs.push(job);
-
-
-
-    localStorage.setItem(
-      "savedJobs",
-      JSON.stringify(savedJobs)
+    const res = await fetch(
+      "http://localhost:5000/api/saved-jobs/save",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          jobId: job._id,
+        }),
+      }
     );
 
+    const data = await res.json();
 
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to save job");
+    }
 
     alert("Job Saved Successfully");
 
-  };
+  } catch (error) {
+
+    console.error("Save Job Error:", error);
+    alert("Unable to save job");
+
+  }
+
+};
 
 
 const toggleFilter = (type, value) => {
@@ -286,7 +286,7 @@ const toggleFilter = (type, value) => {
 
       {/* HEADER */}
 
-      <div className="flex justify-between items-center px-10 py-4 bg-black/70 border-b border-gray-800 backdrop-blur-md">
+      <div className="flex items-center justify-between px-10 py-4 border-b border-gray-800 bg-black/70 backdrop-blur-md">
 
 
         {/* LEFT LOGO */}
@@ -309,7 +309,7 @@ const toggleFilter = (type, value) => {
 
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-2 text-gray-300 hover:text-blue-400 transition"
+            className="flex items-center gap-2 text-gray-300 transition hover:text-blue-400"
           >
             <Home size={18} />
             Home
@@ -328,13 +328,13 @@ const toggleFilter = (type, value) => {
     whileTap={{ scale: 0.95 }}
     transition={{ type: "spring", stiffness: 300 }}
     onClick={() => setProfileOpen(!profileOpen)}
-    className="flex items-center gap-3 cursor-pointer bg-black/60 px-3 py-2 rounded-lg border border-blue-900 transition-all"
+    className="flex items-center gap-3 px-3 py-2 transition-all border border-blue-900 rounded-lg cursor-pointer bg-black/60"
   >
 
     <motion.img
       whileHover={{ scale: 1.1 }}
       src={user.profilePic}
-      className="w-9 h-9 rounded-full border border-blue-900"
+      className="border border-blue-900 rounded-full w-9 h-9"
     />
 
     <p className="text-sm font-semibold">
@@ -360,7 +360,7 @@ const toggleFilter = (type, value) => {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -15, scale: 0.95 }}
         transition={{ duration: 0.25 }}
-        className="absolute right-0 mt-3 w-52 bg-black border border-gray-700 rounded-xl shadow-xl overflow-hidden"
+        className="absolute right-0 mt-3 overflow-hidden bg-black border border-gray-700 shadow-xl w-52 rounded-xl"
       >
 
         {/* PROFILE BUTTON */}
@@ -373,7 +373,7 @@ const toggleFilter = (type, value) => {
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.2 }}
           onClick={() => navigate("/profile")}
-          className="flex items-center gap-2 w-full px-4 py-3 text-white"
+          className="flex items-center w-full gap-2 px-4 py-3 text-white"
         >
           <User size={16} />
           Profile
@@ -389,7 +389,7 @@ const toggleFilter = (type, value) => {
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.2 }}
           onClick={() => navigate("/saved-jobs")}
-          className="flex items-center gap-2 w-full px-4 py-3 text-white"
+          className="flex items-center w-full gap-2 px-4 py-3 text-white"
         >
           <Briefcase size={16} />
           Saved Jobs
@@ -405,7 +405,7 @@ const toggleFilter = (type, value) => {
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.2 }}
           onClick={handleLogout}
-          className="flex items-center gap-2 w-full px-4 py-3 text-white"
+          className="flex items-center w-full gap-2 px-4 py-3 text-white"
         >
           <LogOut size={16} />
           Logout
@@ -426,17 +426,17 @@ const toggleFilter = (type, value) => {
 
 
       {/* MAIN CONTAINER */}
-      <div className="flex max-w-350 mx-auto">
+      <div className="flex mx-auto max-w-350">
 
 
         {/* SIDEBAR */}
-        <div className="w-72 min-h-screen border-r border-gray-800 bg-black/80 p-6">
+        <div className="min-h-screen p-6 border-r border-gray-800 w-72 bg-black/80">
 
-          <h2 className="text-xl font-bold mb-1">
+          <h2 className="mb-1 text-xl font-bold">
             All Filters
           </h2>
 
-          <p className="text-blue-400 text-sm mb-5">
+          <p className="mb-5 text-sm text-blue-400">
   Applied ({
     // eslint-disable-next-line no-unused-vars
     Object.entries(filters).reduce((count, [key, value]) => {
@@ -460,10 +460,10 @@ const toggleFilter = (type, value) => {
 
   {/* HEADER */}
   <div
-    className="flex justify-between items-center cursor-pointer mb-4"
+    className="flex items-center justify-between mb-4 cursor-pointer"
     onClick={() => toggleCollapse("experience")}
   >
-    <h3 className="font-semibold text-sm text-gray-200">
+    <h3 className="text-sm font-semibold text-gray-200">
       Experience
     </h3>
 
@@ -493,7 +493,7 @@ const toggleFilter = (type, value) => {
           <div className="relative">
 
             {/* Circle */}
-            <div className="bg-blue-600 text-white text-xs w-7 h-7 flex items-center justify-center rounded-full">
+            <div className="flex items-center justify-center text-xs text-white bg-blue-600 rounded-full w-7 h-7">
 
               {filters.experience}
 
@@ -533,7 +533,7 @@ const toggleFilter = (type, value) => {
 
 
       {/* Labels */}
-      <div className="flex justify-between text-xs text-gray-400 mt-2">
+      <div className="flex justify-between mt-2 text-xs text-gray-400">
 
         <span>0 Yrs</span>
 
@@ -542,7 +542,7 @@ const toggleFilter = (type, value) => {
       </div>
 
 
-      <hr className="border-gray-700 mt-4" />
+      <hr className="mt-4 border-gray-700" />
 
     </div>
 
@@ -633,7 +633,7 @@ setFilters={setFilters}
 />
 
 
-          <p className="text-gray-400 text-sm mt-6">
+          <p className="mt-6 text-sm text-gray-400">
             Total Jobs: {filteredJobs.length}
           </p>
 
@@ -647,13 +647,13 @@ setFilters={setFilters}
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-3xl font-bold mb-8 text-center"
+            className="mb-8 text-3xl font-bold text-center"
           >
             Available Jobs
           </motion.h1>
 
 
-          <div className="flex flex-col gap-5 max-w-225 mx-auto">
+          <div className="flex flex-col gap-5 mx-auto max-w-225">
 
             {Array.isArray(filteredJobs) && filteredJobs.map((job, i) => (
 
@@ -663,7 +663,7 @@ setFilters={setFilters}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-black/80 border border-gray-700 rounded-xl p-7 cursor-pointer hover:border-blue-500 hover:shadow-lg transition"
+                className="transition border border-gray-700 cursor-pointer bg-black/80 rounded-xl p-7 hover:border-blue-500 hover:shadow-lg"
               >
 
                 <div className="flex justify-between">
@@ -675,11 +675,11 @@ setFilters={setFilters}
                       {job.title}
                     </h2>
 
-                    <p className="text-gray-300 text-sm mt-1">
+                    <p className="mt-1 text-sm text-gray-300">
                       {job.companyName}
                     </p>
 
-                    <div className="flex gap-6 text-xs text-gray-400 mt-2">
+                    <div className="flex gap-6 mt-2 text-xs text-gray-400">
                       <span>
                         🧳 {job.minExp}-{job.maxExp} yrs
                       </span>
@@ -705,7 +705,7 @@ setFilters={setFilters}
 
                           <span
                             key={index}
-                            className="text-xs px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-b-cyan-700"
+                            className="px-2 py-1 text-xs text-blue-400 border rounded bg-blue-500/10 border-b-cyan-700"
                           >
                             {skill}
                           </span>
@@ -717,7 +717,7 @@ setFilters={setFilters}
                     )}
 
 
-                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">
+                    <p className="mt-2 text-xs text-gray-400 line-clamp-2">
                       {job.description}
                     </p>
 
@@ -733,7 +733,7 @@ setFilters={setFilters}
                         job.companyLogo ||
                         "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
                       }
-                      className="w-14 h-14 bg-white rounded p-1"
+                      className="p-1 bg-white rounded w-14 h-14"
                     />
 
 

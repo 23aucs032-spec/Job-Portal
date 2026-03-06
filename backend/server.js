@@ -12,6 +12,8 @@ const dashboardRoutes = require("./routes/dashboardroutes");
 const recruiterRoutes = require("./routes/recruiterRoutes");
 const userRoutes = require("./routes/userRoutes");
 const profileRoutes = require("./routes/profileRoutes");
+const searchRoutes = require("./routes/searchRoutes");
+const savedJobRoutes = require("./routes/savedJobRoutes");
 
 
 dotenv.config();
@@ -31,6 +33,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/recruiter", recruiterRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/saved-jobs", savedJobRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Base Route

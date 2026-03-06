@@ -1,202 +1,233 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bookmark, Trash2, Eye } from "lucide-react";
 
 const SavedJobs = () => {
 
   const navigate = useNavigate();
 
-  const [jobs, setJobs] = useState([]);
+  const [savedJobs, setSavedJobs] = useState([]);
 
 
-  useEffect(() => {
+  /* ================= LOAD SAVED JOBS ================= */
 
-    const saved =
-      JSON.parse(localStorage.getItem("savedJobs")) || [];
+ useEffect(() => {
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setJobs(saved);
+  const fetchSavedJobs = async () => {
 
-  }, []);
+    try {
 
+      const token = localStorage.getItem("token");
 
+      const res = await fetch(
+        "http://localhost:5000/api/saved-jobs",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
 
-  const removeJob = (id) => {
+      const data = await res.json();
 
-    const updated =
-      jobs.filter((job) => job._id !== id);
+      const jobs = data.map((item) => item.job);
 
-    setJobs(updated);
+      setSavedJobs(jobs);
 
-    localStorage.setItem(
-      "savedJobs",
-      JSON.stringify(updated)
-    );
+    } catch (error) {
+
+      console.log(error);
+
+    }
 
   };
 
+  fetchSavedJobs();
+
+}, []);
+
+
+  /* ================= REMOVE JOB ================= */
+
+  const removeJob = async (id) => {
+
+  try {
+
+    const token = localStorage.getItem("token");
+
+    await fetch(
+      `http://localhost:5000/api/saved-jobs/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    setSavedJobs(savedJobs.filter((job) => job._id !== id));
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
+
+
+  /* ================= ANIMATION VARIANTS ================= */
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12
+      }
+    }
+  };
+
+  const card = {
+    hidden: { opacity: 0, y: 40 },
+    show: { opacity: 1, y: 0 }
+  };
 
 
   return (
 
-    <div className="min-h-screen bg-black text-white p-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen p-10 text-white bg-black"
+    >
 
-      {/* Header */}
+      {/* PAGE TITLE */}
 
-      <motion.div
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="flex justify-between items-start"
+      <motion.h2
+        initial={{ y: -40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex items-center justify-center gap-2 mb-8 text-3xl font-semibold text-center"
       >
-
-        <h2 className="text-4xl font-bold mb-2 text-cyan-400">
-          Saved Jobs
-        </h2>
-
-        <p className="text-gray-400 mb-8">
-          View and manage your saved opportunities
-        </p>
-
-        <button
-          onClick={() => navigate("/jobseeker/dashboard")}
-          className="px-5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 transition"
-        >
-        ← Your Dashboard
-        </button>
-
-      </motion.div>
+        <Bookmark size={28} />
+        Saved Jobs
+      </motion.h2>
 
 
+      {/* EMPTY STATE */}
 
-      {jobs.length === 0 ? (
+      {savedJobs.length === 0 && (
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-gray-400"
+          className="text-lg text-center text-gray-400"
         >
-          You have not saved any jobs yet.
+          No saved jobs yet
         </motion.p>
 
-      ) : (
-
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={{
-            visible: {
-              transition: {
-                staggerChildren: 0.15
-              }
-            }
-          }}
-          className="flex flex-col gap-6"
-        >
+      )}
 
 
-          {jobs.map((job) => (
+      {/* JOB LIST */}
+
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="flex flex-col max-w-4xl gap-6 mx-auto"
+      >
+
+        <AnimatePresence>
+
+          {savedJobs.map((job) => (
 
             <motion.div
-
               key={job._id}
-
-              variants={{
-                hidden: {
-                  opacity: 0,
-                  y: 40
-                },
-                visible: {
-                  opacity: 1,
-                  y: 0
-                }
-              }}
-
+              variants={card}
               whileHover={{
                 scale: 1.02,
-                borderColor: "#22d3ee",
-                boxShadow: "0px 0px 20px rgba(34,211,238,0.4)"
+                borderColor: "#3b82f6"
               }}
-
-              transition={{
-                duration: 0.4
-              }}
-
-              onClick={() => navigate(`/job/${job._id}`)}
-
-              className="bg-black/80 border border-gray-700 rounded-xl p-6 cursor-pointer transition-all duration-300"
+              exit={{ opacity: 0, y: 20 }}
+              className="p-6 border border-gray-700 rounded-xl bg-[#111] shadow-lg transition"
             >
 
+              <div className="flex items-center justify-between">
 
-              <div className="flex justify-between items-start">
-
-
-                {/* LEFT */}
+                {/* LEFT SIDE */}
 
                 <div>
 
-                  <h2 className="text-xl text-cyan-400 font-semibold mb-2">
+                  <h3 className="text-lg font-semibold text-blue-400">
                     {job.title}
-                  </h2>
-
+                  </h3>
 
                   <p className="text-gray-300">
                     {job.companyName}
                   </p>
 
-
-                  <p className="text-sm text-gray-400 mt-1">
-                    📍 {job.location}
-                  </p>
-
-
                   <p className="text-sm text-gray-400">
-                    💰 ₹{job.minSalary} - ₹{job.maxSalary}
+                    📍 {job.location}
                   </p>
 
                 </div>
 
 
+                {/* COMPANY LOGO */}
 
-                {/* RIGHT */}
-
-                <motion.button
-
-                  whileHover={{ scale: 1.15 }}
-
-                  whileTap={{ scale: 0.9 }}
-
-                  onClick={(e) => {
-
-                    e.stopPropagation();
-
-                    removeJob(job._id);
-
-                  }}
-
-                  className="text-red-400 hover:text-red-600 font-semibold"
-                >
-
-                  Remove
-
-                </motion.button>
-
+                <img
+                  src={
+                    job.companyLogo ||
+                    "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                  }
+                  className="p-1 bg-white rounded-lg w-14 h-14"
+                  alt="logo"
+                />
 
               </div>
 
+
+              {/* ACTION BUTTONS */}
+
+              <div className="flex gap-4 mt-5">
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() =>
+                    navigate(`/find-job/${job._id}`)
+                  }
+                  className="flex items-center gap-2 px-4 py-1 bg-blue-600 rounded"
+                >
+                  <Eye size={16}/>
+                  View
+                </motion.button>
+
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => removeJob(job._id)}
+                  className="flex items-center gap-2 px-4 py-1 bg-red-600 rounded"
+                >
+                  <Trash2 size={16}/>
+                  Remove
+                </motion.button>
+
+              </div>
 
             </motion.div>
 
           ))}
 
+        </AnimatePresence>
 
-        </motion.div>
+      </motion.div>
 
-      )}
-
-
-    </div>
+    </motion.div>
 
   );
 
