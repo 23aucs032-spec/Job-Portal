@@ -53,24 +53,42 @@ const PostJob = () => {
     contactEmail: "",
   });
 
+  /* FETCH PROFILE SAFELY */
   useEffect(() => {
     const fetchCompany = async () => {
+
       const token = localStorage.getItem("token");
 
       if (!token) return;
 
       try {
+
         const res = await fetch("http://localhost:5000/api/profile", {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+
+        if (!res.ok) {
+          console.warn("Profile API not found");
+          return;
+        }
+
+        const contentType = res.headers.get("content-type");
+
+        if (!contentType || !contentType.includes("application/json")) {
+          console.warn("Profile response is not JSON");
+          return;
+        }
 
         const data = await res.json();
 
         setForm((prev) => ({
           ...prev,
-          companyName: data.user.companyName || "",
-          contactEmail: data.user.email || "",
+          companyName: data?.user?.companyName || "",
+          contactEmail: data?.user?.email || "",
         }));
+
       } catch (err) {
         console.error("Error fetching profile:", err);
       }

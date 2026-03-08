@@ -4,8 +4,11 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 
-const authRoutes = require("./routes/authRoutes");
+// Load environment variables FIRST
+dotenv.config();
 
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const jobRoutes = require("./routes/jobRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const dashboardRoutes = require("./routes/dashboardroutes");
@@ -14,9 +17,7 @@ const userRoutes = require("./routes/userRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const savedJobRoutes = require("./routes/savedJobRoutes");
-
-
-dotenv.config();
+const otpRoutes = require("./routes/otpRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,6 +36,12 @@ app.use("/api/users", userRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/saved-jobs", savedJobRoutes);
+app.use("/api/admin", adminRoutes);
+
+// OTP Routes
+app.use("/api/otp", otpRoutes);
+
+// Static folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Base Route
@@ -47,9 +54,10 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected");
-    app.listen(PORT, () =>
-      console.log(`🚀 Server running on port ${PORT}`)
-    );
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
   })
   .catch((error) => {
     console.error("❌ MongoDB connection failed:", error.message);

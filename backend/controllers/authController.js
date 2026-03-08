@@ -89,11 +89,20 @@ exports.login = async (req, res) => {
     }
 
     const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
+
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    /* 🚫 BLOCK EMPLOYER LOGIN */
+    if (user.role === "Employer") {
+      return res.status(403).json({
+        message: "Recruiters cannot login from this portal",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -123,3 +132,4 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+

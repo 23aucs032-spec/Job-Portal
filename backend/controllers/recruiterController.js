@@ -72,3 +72,29 @@ exports.loginRecruiter = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/* ================= GET PROFILE ================= */
+exports.getProfile = async (req, res) => {
+  try {
+    const recruiter = await Recruiter.findById(req.user.id).select("-password");
+    if (!recruiter) return res.status(404).json({ message: "Recruiter not found" });
+    res.json({ recruiter });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/* ================= UPDATE PROFILE ================= */
+exports.updateProfile = async (req, res) => {
+  try {
+    const recruiter = await Recruiter.findByIdAndUpdate(
+      req.user.id,
+      req.body,
+      { new: true, runValidators: true }
+    ).select("-password");
+    if (!recruiter) return res.status(404).json({ message: "Recruiter not found" });
+    res.json({ message: "Profile updated", recruiter });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

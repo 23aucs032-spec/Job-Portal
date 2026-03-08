@@ -1,46 +1,56 @@
+/* eslint-disable no-unused-vars */
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
 
 const RegisterStep2 = () => {
   const navigate = useNavigate();
-  const basicDetails = JSON.parse(localStorage.getItem("basicDetails"));
+  const basic = JSON.parse(localStorage.getItem("companyBasic"));
 
-  const [company, setCompany] = useState({
+  const [form, setForm] = useState({
     companyName: "",
-    employeesRange: "",
+    companyAddress: "",
+    recruiterName: "",
     designation: "",
+    employeesRange: "",
     pincode: "",
-    address: "",
+    recruiterPhone: "",
+    password: "",
   });
 
   const [errors, setErrors] = useState({});
+
+  const validatePhone = (phone) => /^\d{10}$/.test(phone);
+  const validatePincode = (pincode) => /^\d{6}$/.test(pincode);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     let newErrors = {};
 
-    if (!company.companyName.trim())
-      newErrors.companyName = "Company Name is required";
-    if (!company.employeesRange)
-      newErrors.employeesRange = "Please select employees range";
-    if (!company.designation.trim())
-      newErrors.designation = "Designation is required";
-    if (!company.pincode.trim())
-      newErrors.pincode = "Pincode is required";
-    else if (!/^\d{6}$/.test(company.pincode))
-      newErrors.pincode = "Pincode must be 6 digits";
-    if (!company.address.trim())
-      newErrors.address = "Company Address is required";
+    if (!form.companyName.trim()) newErrors.companyName = "Company name required";
+    if (!form.companyAddress.trim()) newErrors.companyAddress = "Address required";
+    if (!form.recruiterName.trim()) newErrors.recruiterName = "Recruiter name required";
+    if (!form.designation.trim()) newErrors.designation = "Designation required";
+
+    if (!form.employeesRange) newErrors.employeesRange = "Select employees";
+
+    if (!validatePincode(form.pincode))
+      newErrors.pincode = "Enter valid pincode";
+
+    if (!validatePhone(form.recruiterPhone))
+      newErrors.recruiterPhone = "Phone must be 10 digits";
+
+    if (form.password.length < 6)
+      newErrors.password = "Password must be 6 characters";
 
     setErrors(newErrors);
+
     if (Object.keys(newErrors).length > 0) return;
 
-    const finalData = { ...basicDetails, ...company };
+    const finalData = { ...basic, ...form };
 
     try {
       const res = await axios.post(
@@ -48,8 +58,9 @@ const RegisterStep2 = () => {
         finalData
       );
 
-      localStorage.removeItem("basicDetails");
+      localStorage.removeItem("companyBasic");
       localStorage.setItem("token", res.data.token);
+
       navigate("/recruiter/dashboard");
     } catch (error) {
       console.log(error);
@@ -61,96 +72,78 @@ const RegisterStep2 = () => {
     <>
       <AnimatedBackground />
 
-      <div className="flex justify-center items-center min-h-screen text-white px-4">
+      <div className="flex items-center justify-center min-h-screen px-4 text-white">
         <motion.form
+          onSubmit={handleSubmit}
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          onSubmit={handleSubmit}
           className="bg-[#0B1120]/90 backdrop-blur-2xl p-10 rounded-3xl shadow-2xl w-full max-w-md border border-cyan-500/30"
         >
-          <h2 className="text-3xl font-bold mb-8 text-center bg-linear-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-            Company Details
+          <h2 className="mb-8 text-3xl font-bold text-center text-transparent bg-linear-to-r from-cyan-400 to-teal-400 bg-clip-text">
+            Recruiter Details
           </h2>
 
           {[
             ["Company Name", "companyName"],
-            ["Your Designation", "designation"],
+            ["Company Address", "companyAddress"],
+            ["Recruiter Name", "recruiterName"],
+            ["Designation", "designation"],
             ["Pincode", "pincode"],
+            ["Recruiter Phone", "recruiterPhone"],
+            ["Password", "password"],
           ].map(([label, key]) => (
             <div className="mb-5" key={key}>
               <label className="block mb-2 text-sm text-cyan-300">
                 {label}
               </label>
+
               <input
-                type="text"
-                value={company[key]}
-                placeholder={`Enter ${label.toLowerCase()}`}
-                className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+                type={key === "password" ? "password" : "text"}
+                value={form[key]}
+                placeholder={`Enter ${label}`}
                 onChange={(e) =>
-                  setCompany({ ...company, [key]: e.target.value })
+                  setForm({ ...form, [key]: e.target.value })
                 }
+                className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl"
               />
+
               {errors[key] && (
-                <p className="text-red-400 text-sm mt-1">
+                <p className="mt-1 text-sm text-red-400">
                   {errors[key]}
                 </p>
               )}
             </div>
           ))}
 
-          <div className="mb-5">
+          {/* Employees */}
+          <div className="mb-6">
             <label className="block mb-2 text-sm text-cyan-300">
               Employees Range
             </label>
-            <select
-              value={company.employeesRange}
-              className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
-              onChange={(e) =>
-                setCompany({ ...company, employeesRange: e.target.value })
-              }
-            >
-              <option value="">Select Employees Range</option>
-              <option value="0-100">0 - 100</option>
-              <option value="100-200">100 - 200</option>
-              <option value="200-300">200 - 300</option>
-              <option value="300-400">300 - 400</option>
-              <option value="400-500">400 - 500</option>
-              <option value="500-above">500 - Above</option>
-            </select>
-            {errors.employeesRange && (
-              <p className="text-red-400 text-sm mt-1">
-                {errors.employeesRange}
-              </p>
-            )}
-          </div>
 
-          <div className="mb-8">
-            <label className="block mb-2 text-sm text-cyan-300">
-              Company Address
-            </label>
-            <textarea
-              value={company.address}
-              placeholder="Enter company address"
-              className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
+            <select
+              value={form.employeesRange}
               onChange={(e) =>
-                setCompany({ ...company, address: e.target.value })
+                setForm({ ...form, employeesRange: e.target.value })
               }
-            />
-            {errors.address && (
-              <p className="text-red-400 text-sm mt-1">
-                {errors.address}
-              </p>
-            )}
+              className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl"
+            >
+              <option value="">Select Range</option>
+              <option value="0-100">0-100</option>
+              <option value="100-200">100-200</option>
+              <option value="200-300">200-300</option>
+              <option value="300-400">300-400</option>
+              <option value="400-500">400-500</option>
+              <option value="500+">500+</option>
+            </select>
           </div>
 
           <motion.button
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             type="submit"
-            className="w-full bg-linear-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 transition py-3 rounded-xl font-semibold shadow-lg"
+            className="w-full py-3 font-semibold bg-linear-to-r from-cyan-600 to-teal-600 rounded-xl"
           >
-            Register & Go to Dashboard →
+            Register →
           </motion.button>
         </motion.form>
       </div>

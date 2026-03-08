@@ -125,3 +125,4 @@ router.post("/register", async (req, res) => {
 router.post("/login", login);
 
 module.exports = router;
+
