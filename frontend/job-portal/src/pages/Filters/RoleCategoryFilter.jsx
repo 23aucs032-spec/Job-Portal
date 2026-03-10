@@ -1,62 +1,106 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import RoleCategoryFilterPopup from "./RoleCategoryFilterPopup";
 
-const RoleCategoryFilter = ({ selected, setSelected }) => {
+const API = "http://localhost:5000";
+
+const getRoleName = (role) =>
+  String(role?.name || role?.roleCategory || role?._id || "").trim();
+
+const RoleCategoryFilter = ({ selected = [], setSelected }) => {
   const [roleCategories, setRoleCategories] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const safeSelected = Array.isArray(selected) ? selected : [];
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/jobs/role-category-count")
-      .then((res) => res.json())
-      .then((data) => setRoleCategories(data))
-      .catch(() => setRoleCategories([]));
+    const fetchRoleCategories = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${API}/api/jobs/role-category-count`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch role categories");
+        }
+
+        const data = await res.json();
+
+        const validRoles = Array.isArray(data)
+          ? data.filter((item) => getRoleName(item) && Number(item.count) > 0)
+          : [];
+
+        setRoleCategories(validRoles);
+      } catch (error) {
+        console.error("Failed to fetch role categories:", error);
+        setRoleCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoleCategories();
   }, []);
 
-  const toggleOption = (role) => {
-    if (selected.includes(role)) {
-      setSelected(selected.filter((item) => item !== role));
+  const firstFour = useMemo(() => roleCategories.slice(0, 4), [roleCategories]);
+  const remainingRoles = useMemo(() => roleCategories.slice(4), [roleCategories]);
+
+  const toggleOption = (roleName) => {
+    if (!roleName) return;
+
+    if (safeSelected.includes(roleName)) {
+      setSelected(safeSelected.filter((item) => item !== roleName));
     } else {
-      setSelected([...selected, role]);
+      setSelected([...safeSelected, roleName]);
     }
   };
-
-  const firstFour = roleCategories.slice(0, 4);
 
   return (
     <>
       <div className="mt-6">
-        <h3 className="font-semibold mb-3">Role Category</h3>
+        <h3 className="mb-3 text-sm font-semibold text-white">Role Category</h3>
 
-        <div className="space-y-2">
-          {firstFour.map((role, index) => {
-  const roleName =
-    role?.name || role?.roleCategory || role?._id || "";
+        {loading ? (
+          <p className="text-sm text-slate-400">Loading...</p>
+        ) : firstFour.length === 0 ? (
+          <p className="text-sm text-slate-500">No role categories found</p>
+        ) : (
+          <div className="space-y-2">
+            {firstFour.map((role, index) => {
+              const roleName = getRoleName(role);
 
-  return (
-    <label
-      key={role._id || roleName || index}
-      className="flex justify-between items-center cursor-pointer text-sm"
-    >
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={selected.includes(roleName)}
-          onChange={() => toggleOption(roleName)}
-        />
-        {roleName}
-      </div>
-      <span className="text-gray-400">
-        ({role.count || 0})
-      </span>
-    </label>
-  );
-})}
-        </div>
+              return (
+                <label
+                  key={role._id || roleName || index}
+                  className="flex cursor-pointer items-center justify-between text-sm text-slate-300"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={safeSelected.includes(roleName)}
+                      onChange={() => toggleOption(roleName)}
+                      className="accent-cyan-500"
+                    />
+                    <span>{roleName}</span>
+                  </div>
 
-        {roleCategories.length > 4 && (
+                  <span className="text-slate-400">({role.count || 0})</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+
+        {safeSelected.length > 0 && (
+          <p className="mt-2 text-xs text-cyan-400">
+            {safeSelected.length} selected
+          </p>
+        )}
+
+        {remainingRoles.length > 0 && (
           <button
+            type="button"
             onClick={() => setShowPopup(true)}
-            className="text-blue-500 text-sm mt-3"
+            className="mt-3 text-sm font-medium text-cyan-400 hover:text-cyan-300"
           >
             View More
           </button>
@@ -65,10 +109,10 @@ const RoleCategoryFilter = ({ selected, setSelected }) => {
 
       {showPopup && (
         <RoleCategoryFilterPopup
-          selected={selected}
+          selected={safeSelected}
           setSelected={setSelected}
           closePopup={() => setShowPopup(false)}
-          roleCategories={roleCategories}
+          roleCategories={remainingRoles}
         />
       )}
     </>

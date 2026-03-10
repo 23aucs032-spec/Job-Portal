@@ -1,334 +1,132 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
+import React, { useMemo, useState } from "react";
 import { X } from "lucide-react";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
 const DepartmentFilterPopup = ({
-  selected,
+  selected = [],
   setSelected,
-  closePopup
+  closePopup,
+  departments = [],
 }) => {
-
   const [search, setSearch] = useState("");
 
-  const [departments, setDepartments] = useState([]);
+  const safeSelected = Array.isArray(selected) ? selected : [];
+  const safeDepartments = Array.isArray(departments) ? departments : [];
 
-  const [loading, setLoading] = useState(true);
-
-
-
-  /* =====================================
-     FETCH DEPARTMENT COUNT FROM BACKEND
-  ===================================== */
-
-  useEffect(() => {
-
-    fetch("http://localhost:5000/api/jobs/department-count")
-
-      .then(res => res.json())
-
-      .then(data => {
-
-        setDepartments(data);
-
-        setLoading(false);
-
-      })
-
-      .catch(() => {
-
-        setDepartments([]);
-
-        setLoading(false);
-
-      });
-
-  }, []);
-
-
-
-
-  /* =====================================
-     SEARCH FILTER
-  ===================================== */
-
-  const filtered = departments.filter(dep =>
-
-    dep.name
-      .toLowerCase()
-      .includes(search.toLowerCase())
-
-  );
-
-
-
-
-  /* =====================================
-     TOGGLE SELECT
-  ===================================== */
+  const filteredDepartments = useMemo(() => {
+    return safeDepartments.filter((dep) =>
+      String(dep?.name || "")
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    );
+  }, [safeDepartments, search]);
 
   const toggleDepartment = (depName) => {
-
-    if (selected.includes(depName)) {
-
-      setSelected(
-
-        selected.filter(d => d !== depName)
-
-      );
-
+    if (safeSelected.includes(depName)) {
+      setSelected(safeSelected.filter((d) => d !== depName));
+    } else {
+      setSelected([...safeSelected, depName]);
     }
-
-    else {
-
-      setSelected([
-
-        ...selected,
-        depName
-
-      ]);
-
-    }
-
   };
 
+  const handleClearAll = () => {
+    const popupDepartmentNames = safeDepartments.map((dep) => dep.name);
 
+    const remainingSelected = safeSelected.filter(
+      (item) => !popupDepartmentNames.includes(item)
+    );
+
+    setSelected(remainingSelected);
+  };
 
   return (
-
-    <div className="fixed inset-0 bg-black/40 z-50">
-
-
-      {/* ANIMATION */}
-
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+      onClick={closePopup}
+    >
       <motion.div
-
-        initial={{ x: -400, opacity: 0 }}
+        initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-
-        exit={{ x: -400, opacity: 0 }}
-
+        exit={{ x: -300, opacity: 0 }}
         transition={{ duration: 0.3 }}
-
-        className="absolute top-20 left-10 bg-black border border-gray-700 w-105 max-h-125 rounded-xl shadow-2xl p-4 text-white"
-
+        onClick={(e) => e.stopPropagation()}
+        className="absolute left-6 top-20 w-105 max-w-[92vw] rounded-2xl border border-slate-700 bg-[#020617] p-4 text-white shadow-2xl"
       >
-
-
-
-        {/* HEADER */}
-
-        <div className="flex justify-between items-center mb-3">
-
-
+        <div className="mb-3 flex items-center justify-between">
           <div>
-
-            <h2 className="text-lg font-semibold">
-
-              Department
-
-            </h2>
-
-            <p className="text-xs text-gray-400">
-
-              {departments.length} Departments
-
+            <h2 className="text-lg font-semibold">More Departments</h2>
+            <p className="text-xs text-slate-400">
+              {safeDepartments.length} Departments
             </p>
-
           </div>
 
-
-
           <button
-
             onClick={closePopup}
-
-            className="text-gray-400 hover:text-white"
-
+            className="text-slate-400 transition hover:text-white"
           >
-
             <X size={20} />
-
           </button>
-
-
         </div>
-
-
-
-
-        {/* SEARCH */}
 
         <input
-
           type="text"
-
           placeholder="Search Department"
-
-          className="bg-black border border-gray-600 p-2 w-full mb-3 rounded text-sm text-white outline-none focus:border-blue-500"
-
+          className="mb-3 w-full rounded-lg border border-slate-600 bg-slate-900 p-2 text-sm text-white outline-none focus:border-cyan-500"
           value={search}
-
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-
+          onChange={(e) => setSearch(e.target.value)}
         />
 
+        {safeSelected.length > 0 && (
+          <p className="mb-2 text-xs text-cyan-400">
+            {safeSelected.length} Selected
+          </p>
+        )}
 
+        <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto text-sm">
+          {filteredDepartments.length === 0 ? (
+            <p className="text-slate-400">No more departments found</p>
+          ) : (
+            filteredDepartments.map((dep) => (
+              <label
+                key={dep.name}
+                className="flex cursor-pointer items-center justify-between rounded p-2 hover:bg-slate-800"
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={safeSelected.includes(dep.name)}
+                    onChange={() => toggleDepartment(dep.name)}
+                    className="accent-cyan-500"
+                  />
+                  <span>{dep.name}</span>
+                </div>
 
-
-        {/* SELECTED COUNT */}
-
-        {
-
-          selected.length > 0 && (
-
-            <p className="text-xs text-blue-400 mb-2">
-
-              {selected.length} Selected
-
-            </p>
-
-          )
-
-        }
-
-
-
-
-        {/* LIST */}
-
-        <div className="grid grid-cols-2 gap-2 max-h-75 overflow-y-auto text-sm">
-
-
-          {
-
-            loading
-
-              ?
-
-              <p className="text-gray-400">
-
-                Loading...
-
-              </p>
-
-
-              :
-
-
-              filtered.map(dep => (
-
-                <label
-
-                  key={dep.name}
-
-                  className="flex items-center justify-between cursor-pointer hover:bg-gray-800 p-2 rounded"
-
-                >
-
-
-                  <div className="flex items-center gap-2">
-
-                    <input
-
-                      type="checkbox"
-
-                      checked={
-
-                        selected.includes(dep.name)
-
-                      }
-
-                      onChange={() =>
-
-                        toggleDepartment(dep.name)
-
-                      }
-
-                      className="accent-blue-500"
-
-                    />
-
-
-                    {/* NAME */}
-
-                    <span>
-
-                      {dep.name}
-
-                    </span>
-
-                  </div>
-
-
-
-                  {/* COUNT */}
-
-                  <span className="text-gray-400 text-xs">
-
-                    ({dep.count})
-
-                  </span>
-
-
-
-                </label>
-
-              ))
-
-          }
-
-
+                <span className="text-xs text-slate-400">({dep.count || 0})</span>
+              </label>
+            ))
+          )}
         </div>
 
-
-
-
-        {/* BUTTONS */}
-
-        <div className="flex justify-between items-center mt-4">
-
-
+        <div className="mt-4 flex items-center justify-between">
           <button
-
-            onClick={() => setSelected([])}
-
+            onClick={handleClearAll}
             className="text-xs text-red-400 hover:text-red-300"
-
           >
-
-            Clear All
-
+            Clear Popup Items
           </button>
-
-
 
           <button
-
             onClick={closePopup}
-
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-6 py-1.5 rounded"
-
+            className="rounded bg-cyan-600 px-6 py-1.5 text-sm text-white hover:bg-cyan-700"
           >
-
             Apply
-
           </button>
-
-
         </div>
-
-
       </motion.div>
-
-
     </div>
-
   );
-
 };
-
 
 export default DepartmentFilterPopup;

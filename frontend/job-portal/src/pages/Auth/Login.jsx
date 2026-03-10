@@ -34,21 +34,17 @@ const Login = () => {
   /* ---------------- INPUT CHANGE ---------------- */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (name === "email") {
       setFormState((prev) => ({
         ...prev,
-        errors: {
-          ...prev.errors,
-          email: validateEmail(value),
-        },
+        errors: { ...prev.errors, email: validateEmail(value) },
       }));
     }
   };
 
-  /* ---------------- LOGIN FORM VALIDATION ---------------- */
+  /* ---------------- FORM VALIDATION ---------------- */
   const validateForm = () => {
     const errors = {};
 
@@ -64,7 +60,7 @@ const Login = () => {
     return Object.keys(errors).length === 0;
   };
 
-  /* ---------------- SUBMIT ---------------- */
+  /* ---------------- SUBMIT LOGIN ---------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -82,12 +78,15 @@ const Login = () => {
       );
 
       const user = res.data.user;
-      const role = user.role.toLowerCase();
 
-      // SAVE FIRST
+      // Normalize role for routing
+      const role = user.role.toLowerCase(); // "employer" or "jobseeker"
+
+      // Store token and user
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify({ ...user, role }));
 
+      // Show success state
       setFormState((prev) => ({
         ...prev,
         loading: false,
@@ -95,7 +94,7 @@ const Login = () => {
         success: true,
       }));
 
-      // NAVIGATE AFTER STORAGE
+      // Redirect to dashboard based on role
       setTimeout(() => {
         if (role === "employer") {
           navigate("/employer/dashboard", { replace: true });
@@ -129,12 +128,8 @@ const Login = () => {
           className="w-full max-w-md p-8 text-center border shadow-xl bg-[#020617]/80 backdrop-blur-md rounded-2xl border-[#1F2933]"
         >
           <CheckCircle className="w-16 h-16 mx-auto mb-4 text-[#38BDF8]" />
-          <h2 className="mb-2 text-2xl font-bold text-white">
-            Welcome Back!
-          </h2>
-          <p className="mb-4 text-gray-400">
-            Login successful. Redirecting to dashboard...
-          </p>
+          <h2 className="mb-2 text-2xl font-bold text-white">Welcome Back!</h2>
+          <p className="mb-4 text-gray-400">Login successful. Redirecting to dashboard...</p>
           <div className="w-6 h-6 mx-auto border-2 border-[#38BDF8] rounded-full animate-spin border-t-transparent"></div>
         </motion.div>
       </div>
@@ -145,7 +140,6 @@ const Login = () => {
   return (
     <div className="relative flex items-center justify-center min-h-screen px-4 bg-[#020617]">
       <AnimatedBackground />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -155,16 +149,11 @@ const Login = () => {
         <div className="mb-8 text-center">
           <h2
             className="text-3xl font-bold text-transparent bg-clip-text"
-            style={{
-              backgroundImage:
-                "linear-gradient(90deg, #38BDF8, #14B8A6)",
-            }}
+            style={{ backgroundImage: "linear-gradient(90deg, #38BDF8, #14B8A6)" }}
           >
             Welcome Back
           </h2>
-          <p className="text-gray-400">
-            Sign in to your JobPortal account
-          </p>
+          <p className="text-gray-400">Sign in to your JobPortal account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -180,8 +169,8 @@ const Login = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full py-3 pl-10 pr-4 text-white border rounded-lg caret-white placeholder:text-gray-500 bg-[#020617] border-[#1F2933] focus:ring-2 focus:ring-[#38BDF8] focus:border-transparent"
                 placeholder="Enter your email"
+                className="w-full py-3 pl-10 pr-4 text-white border rounded-lg caret-white placeholder:text-gray-500 bg-[#020617] border-[#1F2933] focus:ring-2 focus:ring-[#38BDF8] focus:border-transparent"
               />
             </div>
             {formState.errors.email && (
@@ -204,24 +193,17 @@ const Login = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full py-3 pl-10 pr-12 text-white border rounded-lg caret-white placeholder:text-gray-500 bg-[#020617] border-[#1F2933] focus:ring-2 focus:ring-[#38BDF8] focus:border-transparent"
                 placeholder="Enter your password"
+                className="w-full py-3 pl-10 pr-12 text-white border rounded-lg caret-white placeholder:text-gray-500 bg-[#020617] border-[#1F2933] focus:ring-2 focus:ring-[#38BDF8] focus:border-transparent"
               />
               <button
                 type="button"
                 onClick={() =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    showPassword: !prev.showPassword,
-                  }))
+                  setFormState((prev) => ({ ...prev, showPassword: !prev.showPassword }))
                 }
                 className="absolute -translate-y-1/2 right-3 top-1/2 text-gray-400"
               >
-                {formState.showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                {formState.showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {formState.errors.password && (
@@ -240,15 +222,14 @@ const Login = () => {
             </p>
           )}
 
+          {/* Submit Button */}
           <motion.button
             type="submit"
             disabled={formState.loading}
             whileTap={{ scale: 0.95 }}
             whileHover={{ scale: 1.02 }}
             className="flex items-center justify-center w-full py-3 font-semibold text-black rounded-lg"
-            style={{
-              background: "linear-gradient(90deg, #38BDF8, #14B8A6)",
-            }}
+            style={{ background: "linear-gradient(90deg, #38BDF8, #14B8A6)" }}
           >
             {formState.loading ? (
               <>
@@ -256,7 +237,7 @@ const Login = () => {
                 Signing In...
               </>
             ) : (
-              "Login In"
+              "Login"
             )}
           </motion.button>
         </form>

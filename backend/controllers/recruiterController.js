@@ -1,100 +1,198 @@
 const Recruiter = require("../models/Recruiter");
-const bcrypt = require("bcryptjs");
+const EmailOtp = require("../models/EmailOtp");
 const jwt = require("jsonwebtoken");
 
-/* ================= REGISTER ================= */
 exports.registerRecruiter = async (req, res) => {
   try {
-    const { fullName, email, password, companyName } = req.body;
-
-    // Check if recruiter already exists
-    const existingRecruiter = await Recruiter.findOne({ email });
-    if (existingRecruiter) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const recruiter = await Recruiter.create({
+    const {
+      accountType,
       fullName,
       email,
-      password: hashedPassword,
+      password,
+      hiringFor,
       companyName,
-    });
+      industry,
+      employeesRange,
+      designation,
+      pincode,
+      companyAddress,
+    } = req.body;
 
-    res.status(201).json({
-      message: "Recruiter registered successfully",
-      recruiter,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-/* ================= LOGIN ================= */
-exports.loginRecruiter = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // 1️⃣ Check recruiter exists
-    const recruiter = await Recruiter.findOne({ email });
-    if (!recruiter) {
-      return res.status(400).json({ message: "Invalid email" });
+    if (
+      !accountType ||
+      !fullName ||
+      !email ||
+      !password ||
+      !hiringFor ||
+      !companyName ||
+      !industry ||
+      !employeesRange ||
+      !designation ||
+      !pincode ||
+      !companyAddress
+    ) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
 
-    // 2️⃣ Compare password
-    const isMatch = await bcrypt.compare(password, recruiter.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid password" });
+    const existingRecruiter = await Recruiter.findOne({ email });
+    if (existingRecruiter) {
+      return res.status(400).json({
+        message: "Email already registered",
+      });
     }
 
-    // 3️⃣ Generate JWT Token
+    const verifiedOtp = await EmailOtp.findOne({
+      email,
+      verified: true,
+    });
+
+    if (!verifiedOtp) {
+      return res.status(400).json({
+        message: "Email is not verified",
+      });
+    }
+
+    const recruiter = new Recruiter({
+      accountType,
+      fullName,
+      email,
+      password,
+      hiringFor,
+      companyName,
+      industry,
+      employeesRange,
+      designation,
+      pincode,
+      companyAddress,
+    });
+
+    await recruiter.save();
+    await EmailOtp.findOneAndDelete({ email });
+
     const token = jwt.sign(
       { id: recruiter._id, role: "recruiter" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    // 4️⃣ Send response
-    res.status(200).json({
-      message: "Login successful",
+    const recruiterData = await Recruiter.findById(recruiter._id).select("-password");
+
+    return res.status(201).json({
+      message: "Recruiter registered successfully",
       token,
-      user: {
-        _id: recruiter._id,
-        fullName: recruiter.fullName,
-        email: recruiter.email,
-        role: "recruiter",
-      },
+      recruiter: recruiterData,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("registerRecruiter error:", error);
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
-/* ================= GET PROFILE ================= */
+exports.loginRecruiter = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password required",
+      });
+    }
+
+    const recruiter = await Recruiter.findOne({ email });
+    if (!recruiter) {
+      return res.status(400).json({
+        message: "Invalid email",
+      });
+    }
+
+    const isMatch = await recruiter.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Invalid password",
+      });
+    }
+
+    const token = jwt.sign(
+      { id: recruiter._id, role: "recruiter" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    const recruiterData = await Recruiter.findById(recruiter._id).select("-password");
+
+    return res.status(200).json({
+      message: "Login successful",
+      token,
+      recruiter: recruiterData,
+    });
+  } catch (error) {
+    console.error("loginRecruiter error:", error);
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
 exports.getProfile = async (req, res) => {
   try {
     const recruiter = await Recruiter.findById(req.user.id).select("-password");
-    if (!recruiter) return res.status(404).json({ message: "Recruiter not found" });
-    res.json({ recruiter });
+
+    if (!recruiter) {
+      return res.status(404).json({
+        message: "Recruiter not found",
+      });
+    }
+
+    return res.status(200).json(recruiter);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("getProfile error:", error);
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
-/* ================= UPDATE PROFILE ================= */
 exports.updateProfile = async (req, res) => {
   try {
-    const recruiter = await Recruiter.findByIdAndUpdate(
-      req.user.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).select("-password");
-    if (!recruiter) return res.status(404).json({ message: "Recruiter not found" });
-    res.json({ message: "Profile updated", recruiter });
+    const updateData = {
+      fullName: req.body.fullName,
+      companyName: req.body.companyName,
+      designation: req.body.designation,
+      employeesRange: req.body.employeesRange,
+      pincode: req.body.pincode,
+      companyAddress: req.body.companyAddress,
+      industry: req.body.industry,
+      hiringFor: req.body.hiringFor,
+      accountType: req.body.accountType,
+    };
+
+    if (req.file) {
+      updateData.logo = `/uploads/logos/${req.file.filename}`;
+    }
+
+    const recruiter = await Recruiter.findByIdAndUpdate(req.user.id, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
+    if (!recruiter) {
+      return res.status(404).json({
+        message: "Recruiter not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      recruiter,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("updateProfile error:", error);
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };

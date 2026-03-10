@@ -2,37 +2,133 @@ const mongoose = require("mongoose");
 
 const jobSchema = new mongoose.Schema(
   {
-    title: String,
-    companyName: String,
-    consultancyName: String,
-    companyLogo: String,
-    location: String,
+    title: {
+      type: String,
+      trim: true,
+      required: true,
+    },
 
-    minExp: Number,
-    maxExp: Number,
+    companyName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-    minSalary: Number,
-    maxSalary: Number,
+    consultancyName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-    workMode: String,
-    department: String,
-    roleCategory: String,
-    education: String,
-    industry: String,
-    companyType: String,
+    companyLogo: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-    skills: [String],
-    perks: [String],
-    responsibilities: [String],
+    hiringFor: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-    jobDescription: String,
-    contactEmail: String,
-    applyBefore: Date,
+    location: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    minExp: {
+      type: Number,
+      default: 0,
+    },
+
+    maxExp: {
+      type: Number,
+      default: 0,
+    },
+
+    minSalary: {
+      type: Number,
+      default: 0,
+    },
+
+    maxSalary: {
+      type: Number,
+      default: 0,
+    },
+
+    workMode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    department: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    roleCategory: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    education: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    industry: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    companyType: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    skills: {
+      type: [String],
+      default: [],
+    },
+
+    perks: {
+      type: [String],
+      default: [],
+    },
+
+    responsibilities: {
+      type: [String],
+      default: [],
+    },
+
+    jobDescription: {
+      type: String,
+      default: "",
+    },
+
+    contactEmail: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    applyBefore: {
+      type: Date,
+      default: null,
+    },
 
     recruiter: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",  // Should reference the recruiter user
-      required: true
+      ref: "Recruiter",
+      required: true,
     },
 
     applicants: [

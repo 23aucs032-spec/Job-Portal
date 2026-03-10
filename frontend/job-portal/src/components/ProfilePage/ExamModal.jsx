@@ -1,6 +1,6 @@
-// ExamModal.jsx
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -14,7 +14,6 @@ const ExamModal = ({ isOpen, onClose, onSave, initialData }) => {
 
   useEffect(() => {
     if (initialData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExamForm(initialData);
     } else {
       setExamForm({
@@ -27,60 +26,67 @@ const ExamModal = ({ isOpen, onClose, onSave, initialData }) => {
   }, [initialData, isOpen]);
 
   const handleSave = () => {
-    if (!examForm.examName) return;
+    if (!examForm.examName.trim()) return;
     onSave(examForm);
     onClose();
   };
+
+  const inputClass =
+    "w-full rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-slate-200 outline-none placeholder:text-slate-500 focus:border-cyan-500";
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-[#161b22] rounded-2xl w-full max-w-lg p-6 border border-gray-700 relative"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
+            className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-[#0f172a] p-8 shadow-2xl"
+            initial={{ scale: 0.96, opacity: 0, y: 25 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.96, opacity: 0, y: 25 }}
           >
-            <X
-              className="absolute right-5 top-5 cursor-pointer text-gray-400 hover:text-white"
-              size={24}
+            <button
               onClick={onClose}
-            />
-            <h2 className="text-2xl font-bold text-white mb-4">
+              className="absolute right-5 top-5 rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <X size={22} />
+            </button>
+
+            <h2 className="mb-5 text-2xl font-bold text-white">
               {initialData ? "Edit" : "Add"} Competitive Exam
             </h2>
 
             <div className="space-y-4">
               {["examName", "score", "year", "rank"].map((field) => (
                 <div key={field}>
-                  <label className="block text-sm text-gray-400 mb-1.5">{field}</label>
+                  <label className="mb-1.5 block text-sm capitalize text-slate-400">
+                    {field}
+                  </label>
                   <input
                     type="text"
                     value={examForm[field] || ""}
                     onChange={(e) =>
                       setExamForm({ ...examForm, [field]: e.target.value })
                     }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-gray-200"
+                    className={inputClass}
                   />
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end gap-4 mt-6">
+            <div className="mt-8 flex justify-end gap-4 border-t border-white/10 pt-6">
               <button
-                className="text-gray-400 px-6 py-2.5"
+                className="px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
                 onClick={onClose}
               >
                 Cancel
               </button>
               <button
-                className="bg-blue-600 px-8 py-2.5 rounded-lg text-white"
+                className="rounded-2xl bg-cyan-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
                 onClick={handleSave}
               >
                 Save

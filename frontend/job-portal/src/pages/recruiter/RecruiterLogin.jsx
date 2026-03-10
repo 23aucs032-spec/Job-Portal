@@ -66,52 +66,63 @@ const RecruiterLogin = () => {
 
   /* ---------------- SUBMIT ---------------- */
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    try {
-      setFormState((prev) => ({ ...prev, loading: true }));
+  try {
 
-      const res = await axios.post(
-        "http://localhost:5000/api/recruiter/login",
-        {
-          email: formData.email,
-          password: formData.password,
-        },
-        { headers: { "Content-Type": "application/json" } }
-      );
+    setFormState((prev) => ({ ...prev, loading: true }));
 
-      const recruiter = res.data.user;
+    const res = await axios.post(
+      "http://localhost:5000/api/recruiter/login",
+      {
+        email: formData.email,
+        password: formData.password,
+      }
+    );
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...recruiter, role: "recruiter" })
-      );
+    /* ===== IMPORTANT FIX ===== */
 
-      setFormState((prev) => ({
-        ...prev,
-        loading: false,
-        errors: {},
-        success: true,
-      }));
+    const recruiter = res.data.recruiter;   // NOT res.data.user
 
-      setTimeout(() => {
-        navigate("/recruiter/dashboard", { replace: true });
-      }, 1200);
-    } catch (error) {
-      setFormState((prev) => ({
-        ...prev,
-        loading: false,
-        errors: {
-          submit:
-            error.response?.data?.message ||
-            error.response?.data?.error ||
-            "Invalid email or password",
-        },
-      }));
-    }
-  };
+    localStorage.setItem("token", res.data.token);
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        _id: recruiter._id,
+        name: recruiter.name,
+        companyName: recruiter.companyName,
+        email: recruiter.email,
+        role: "recruiter"
+      })
+    );
+
+    setFormState((prev) => ({
+      ...prev,
+      loading: false,
+      errors: {},
+      success: true,
+    }));
+
+    setTimeout(() => {
+      navigate("/recruiter/dashboard");
+    }, 1200);
+
+  } catch (error) {
+
+    setFormState((prev) => ({
+      ...prev,
+      loading: false,
+      errors: {
+        submit:
+          error.response?.data?.message ||
+          "Invalid email or password",
+      },
+    }));
+
+  }
+};
 
   /* ---------------- SUCCESS SCREEN ---------------- */
   if (formState.success) {

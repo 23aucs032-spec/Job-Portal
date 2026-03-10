@@ -1,131 +1,321 @@
-import React, { useState } from "react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
-import { X } from "lucide-react";
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable no-unused-vars */
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Plus } from "lucide-react";
 
-// Props: 
-// modals -> {accomplishments: boolean}, 
-// openModal -> function, 
-// closeModal -> function, 
-// onSave -> function(profileAchievementsArray)
-const AcademicAchievements = ({ modals, closeModal, onSave }) => {
+const achievementOptions = [
+  "College topper",
+  "Department topper",
+  "Top 3 in class",
+  "Top 10 in class",
+  "Gold medalist",
+  "Received scholarship",
+  "All rounder",
+  "Other",
+];
+
+const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) => {
   const [selectedAchievements, setSelectedAchievements] = useState([]);
+  const [otherAchievement, setOtherAchievement] = useState("");
 
-  const achievementOptions = [
-    "College topper",
-    "Department topper",
-    "Top 3 in class",
-    "Top 10 in class",
-    "Gold medalist",
-    "Received scholarship",
-    "All rounder",
-    "Other",
-  ];
+  useEffect(() => {
+    if (modals?.accomplishments) {
+      const normalized = Array.isArray(initialData)
+        ? initialData.map((item) => {
+            if (typeof item === "string") {
+              return {
+                title: item,
+                description: "",
+                year: "",
+              };
+            }
+
+            return {
+              title: item?.title || "",
+              description: item?.description || "",
+              year: item?.year || "",
+            };
+          })
+        : [];
+
+      setSelectedAchievements(normalized);
+
+      const existingOther = normalized.find(
+        (item) => item.title && !achievementOptions.includes(item.title)
+      );
+
+      setOtherAchievement(existingOther?.title || "");
+    }
+  }, [modals?.accomplishments, initialData]);
+
+  const isSelected = (achievement) => {
+    return selectedAchievements.some((item) => item.title === achievement);
+  };
 
   const toggleAchievement = (achievement) => {
-    if (selectedAchievements.includes(achievement)) {
-      setSelectedAchievements(selectedAchievements.filter((a) => a !== achievement));
+    const alreadySelected = selectedAchievements.some(
+      (item) => item.title === achievement
+    );
+
+    if (alreadySelected) {
+      setSelectedAchievements((prev) =>
+        prev.filter((item) => item.title !== achievement)
+      );
     } else {
-      setSelectedAchievements([...selectedAchievements, achievement]);
+      setSelectedAchievements((prev) => [
+        ...prev,
+        {
+          title: achievement,
+          description: "",
+          year: "",
+        },
+      ]);
     }
   };
 
+  const handleRemove = (achievement) => {
+    setSelectedAchievements((prev) =>
+      prev.filter((item) => item.title !== achievement)
+    );
+
+    if (achievement === "Other") {
+      setOtherAchievement("");
+    }
+  };
+
+  const updateAchievementField = (title, field, value) => {
+    setSelectedAchievements((prev) =>
+      prev.map((item) =>
+        item.title === title ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const handleAddOther = () => {
+    const trimmed = otherAchievement.trim();
+    if (!trimmed) return;
+
+    const exists = selectedAchievements.some(
+      (item) => item.title.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (exists) return;
+
+    setSelectedAchievements((prev) => [
+      ...prev,
+      {
+        title: trimmed,
+        description: "",
+        year: "",
+      },
+    ]);
+    setOtherAchievement("");
+  };
+
   const handleSave = () => {
-    console.log("Saved achievements:", selectedAchievements);
-    if (onSave) onSave(selectedAchievements);
+    const cleaned = selectedAchievements
+      .filter((item) => item.title && item.title.trim() !== "")
+      .map((item) => ({
+        title: item.title.trim(),
+        description: item.description?.trim() || "",
+        year: item.year?.trim() || "",
+      }));
+
+    if (onSave) onSave(cleaned);
     closeModal("accomplishments");
   };
 
   return (
-    <>
-      {modals.accomplishments && (
+    <AnimatePresence>
+      {modals?.accomplishments && (
         <motion.div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-[#161b22] rounded-2xl w-full max-w-lg p-6 sm:p-8 border border-gray-700 relative shadow-2xl"
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.96, opacity: 0, y: 30 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.96, opacity: 0, y: 30 }}
+            transition={{ duration: 0.25 }}
+            className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0f172a] p-8 shadow-2xl"
           >
-            {/* Close button */}
-            <X
-              className="absolute right-5 top-5 cursor-pointer text-gray-400 hover:text-white"
-              size={24}
+            {/* Close Button */}
+            <button
+              type="button"
               onClick={() => closeModal("accomplishments")}
-            />
+              className="absolute right-5 top-5 rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <X size={22} />
+            </button>
 
-            <h2 className="text-2xl font-bold text-white mb-2">Academic Achievements</h2>
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              Adding your achievements helps recruiters know your value as a potential candidate
+            <h2 className="mb-2 text-2xl font-bold text-white">
+              Academic Achievements
+            </h2>
+
+            <p className="mb-8 text-sm leading-relaxed text-slate-400">
+              Add academic recognitions to highlight your strengths and stand out
+              to recruiters.
             </p>
 
-            <div className="space-y-6">
-              {/* Selected achievements */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Selected achievements
-                </label>
-                <div className="flex flex-wrap gap-2.5">
-                  {selectedAchievements.map((achievement) => (
-                    <span
-                      key={achievement}
-                      className="bg-blue-900/40 text-blue-300 px-4 py-1.5 rounded-full text-sm border border-blue-800/50 flex items-center gap-2"
-                    >
-                      {achievement}
-                      <X
-                        size={14}
-                        className="cursor-pointer hover:text-red-400"
-                        onClick={() => toggleAchievement(achievement)}
-                      />
-                    </span>
-                  ))}
-                  {selectedAchievements.length === 0 && (
-                    <span className="text-gray-500 text-sm">No achievements added yet</span>
-                  )}
-                </div>
-              </div>
+            {/* Selected Achievements */}
+            <div className="mb-8">
+              <label className="mb-3 block text-sm font-medium text-slate-300">
+                Selected achievements
+              </label>
 
-              {/* Achievement options as pills */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  Add achievements
-                </label>
-                <div className="flex flex-wrap gap-2.5">
-                  {achievementOptions.map((achievement) => (
-                    <button
-                      key={achievement}
-                      className={`px-4 py-1.5 rounded-full text-sm border transition flex items-center gap-1.5
-                        ${
-                          selectedAchievements.includes(achievement)
-                            ? "bg-blue-600 border-blue-500 text-white"
-                            : "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
-                        }`}
-                      onClick={() => toggleAchievement(achievement)}
+              <div className="flex min-h-17.5 flex-wrap gap-3 rounded-2xl border border-white/10 bg-white/4 p-4">
+                {selectedAchievements.length > 0 ? (
+                  selectedAchievements.map((item) => (
+                    <span
+                      key={item.title}
+                      className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-300"
                     >
-                      {achievement}
-                      {!selectedAchievements.includes(achievement) && (
-                        <span className="text-blue-400">+</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                      {item.title}
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(item.title)}
+                        className="text-cyan-300 hover:text-red-400"
+                      >
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-slate-500">
+                    No achievements added yet
+                  </span>
+                )}
               </div>
             </div>
 
+            {/* Achievement Options */}
+            <div className="mb-8">
+              <label className="mb-3 block text-sm font-medium text-slate-300">
+                Add achievements
+              </label>
+
+              <div className="flex flex-wrap gap-3">
+                {achievementOptions.map((achievement) => {
+                  const active = isSelected(achievement);
+
+                  return (
+                    <button
+                      key={achievement}
+                      type="button"
+                      onClick={() => toggleAchievement(achievement)}
+                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                        active
+                          ? "border-cyan-500 bg-cyan-600 text-white"
+                          : "border-white/10 bg-white/4 text-slate-300 hover:bg-white/8"
+                      }`}
+                    >
+                      {!active && <Plus size={14} />}
+                      {achievement}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Other Achievement */}
+            <div className="mb-8">
+              <label className="mb-3 block text-sm font-medium text-slate-300">
+                Add custom achievement
+              </label>
+
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={otherAchievement}
+                  onChange={(e) => setOtherAchievement(e.target.value)}
+                  placeholder="Enter custom achievement"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500 placeholder:text-slate-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddOther}
+                  className="rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {/* Details Section */}
+            {selectedAchievements.length > 0 && (
+              <div className="space-y-5">
+                <h3 className="text-lg font-semibold text-white">
+                  Achievement Details
+                </h3>
+
+                {selectedAchievements.map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-2xl border border-white/10 bg-white/4 p-5"
+                  >
+                    <p className="mb-4 text-base font-semibold text-cyan-300">
+                      {item.title}
+                    </p>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="md:col-span-2">
+                        <label className="mb-2 block text-sm text-slate-400">
+                          Description
+                        </label>
+                        <textarea
+                          value={item.description}
+                          onChange={(e) =>
+                            updateAchievementField(
+                              item.title,
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe this achievement"
+                          className="min-h-25 w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500 placeholder:text-slate-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm text-slate-400">
+                          Year
+                        </label>
+                        <input
+                          type="text"
+                          value={item.year}
+                          onChange={(e) =>
+                            updateAchievementField(
+                              item.title,
+                              "year",
+                              e.target.value
+                            )
+                          }
+                          placeholder="e.g. 2025"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500 placeholder:text-slate-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Footer */}
-            <div className="flex justify-end items-center gap-6 mt-10 pt-6 border-t border-gray-700">
+            <div className="mt-10 flex items-center justify-end gap-4 border-t border-white/10 pt-6">
               <button
-                className="text-gray-400 hover:text-gray-200 text-sm font-medium"
+                type="button"
+                className="px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
                 onClick={() => closeModal("accomplishments")}
               >
                 Cancel
               </button>
+
               <button
-                className="bg-blue-600 hover:bg-blue-500 px-10 py-3 rounded-lg font-medium text-white shadow-md transition"
+                type="button"
+                className="rounded-2xl bg-cyan-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
                 onClick={handleSave}
               >
                 Save
@@ -134,7 +324,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave }) => {
           </motion.div>
         </motion.div>
       )}
-    </>
+    </AnimatePresence>
   );
 };
 

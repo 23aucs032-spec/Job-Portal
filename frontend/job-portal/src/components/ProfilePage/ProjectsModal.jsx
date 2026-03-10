@@ -1,15 +1,10 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
-const ProjectsModal = ({
-  isOpen,
-  onClose,
-  onSave,
-  initialData,
-}) => {
+const ProjectsModal = ({ isOpen, onClose, onSave, initialData }) => {
   const emptyProject = {
     name: "",
     fromMonth: "",
@@ -24,9 +19,6 @@ const ProjectsModal = ({
 
   const [project, setProject] = useState(emptyProject);
 
-  /* ===========================
-     Prevent Background Scroll
-  ============================ */
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -39,9 +31,6 @@ const ProjectsModal = ({
     };
   }, [isOpen]);
 
-  /* ===========================
-     Load Edit Data
-  ============================ */
   useEffect(() => {
     if (initialData) {
       setProject(initialData);
@@ -60,30 +49,25 @@ const ProjectsModal = ({
     onClose();
   };
 
-  /* ===========================
-     Slide Animation
-  ============================ */
   const modalVariants = {
-    hidden: { opacity: 0, y: 80, scale: 0.95 },
+    hidden: { opacity: 0, y: 80, scale: 0.96 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.35, ease: "easeOut" },
+      transition: { duration: 0.3 },
     },
-    exit: {
-      opacity: 0,
-      y: 60,
-      scale: 0.95,
-      transition: { duration: 0.25 },
-    },
+    exit: { opacity: 0, y: 50, scale: 0.96, transition: { duration: 0.2 } },
   };
+
+  const inputClass =
+    "w-full rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500";
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -93,47 +77,38 @@ const ProjectsModal = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="bg-[#161b22] rounded-2xl w-full max-w-2xl border border-gray-700 shadow-2xl flex flex-col max-h-[90vh] relative"
+            className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-white/10 bg-[#0f172a] shadow-2xl"
           >
-            {/* Close Icon */}
-            <X
-              className="absolute right-5 top-5 cursor-pointer text-gray-400 hover:text-white"
-              size={24}
+            <button
               onClick={onClose}
-            />
+              className="absolute right-5 top-5 rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <X size={22} />
+            </button>
 
-            {/* Header */}
-            <div className="px-6 sm:px-8 pt-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                Projects
-              </h2>
-              <p className="text-gray-400 text-sm mb-6">
-                Showcase your best work
+            <div className="px-8 pb-2 pt-8">
+              <h2 className="mb-2 text-2xl font-bold text-white">Projects</h2>
+              <p className="text-sm text-slate-400">
+                Showcase your best work, learnings, and technical strengths.
               </p>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="overflow-y-auto px-6 sm:px-8 pb-6 flex-1 custom-scrollbar">
-              <div className="space-y-6 text-gray-300">
-
-                {/* Project Name */}
+            <div className="flex-1 overflow-y-auto px-8 pb-8 pt-6">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm mb-2">
+                  <label className="mb-2 block text-sm text-slate-300">
                     Project Name
                   </label>
                   <input
                     type="text"
                     value={project.name}
-                    onChange={(e) =>
-                      handleChange("name", e.target.value)
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-blue-500"
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    className={inputClass}
                   />
                 </div>
 
-                {/* Description */}
                 <div>
-                  <label className="block text-sm mb-2">
+                  <label className="mb-2 block text-sm text-slate-300">
                     Project Description
                   </label>
                   <textarea
@@ -141,73 +116,61 @@ const ProjectsModal = ({
                     onChange={(e) =>
                       handleChange("description", e.target.value)
                     }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 min-h-30 focus:outline-none focus:border-blue-500"
+                    className={`${inputClass} min-h-32.5`}
                   />
                 </div>
 
-                {/* Learnings */}
                 <div>
-                  <label className="block text-sm mb-2">
+                  <label className="mb-2 block text-sm text-slate-300">
                     Learnings & Favorite Part
                   </label>
                   <textarea
                     value={project.learnings}
-                    onChange={(e) =>
-                      handleChange("learnings", e.target.value)
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 min-h-30 focus:outline-none focus:border-blue-500"
+                    onChange={(e) => handleChange("learnings", e.target.value)}
+                    className={`${inputClass} min-h-32.5`}
                   />
                 </div>
 
-                {/* Skills */}
                 <div>
-                  <label className="block text-sm mb-2">
+                  <label className="mb-2 block text-sm text-slate-300">
                     Key Skills (comma separated)
                   </label>
                   <input
                     type="text"
                     value={project.skills}
-                    onChange={(e) =>
-                      handleChange("skills", e.target.value)
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-blue-500"
+                    onChange={(e) => handleChange("skills", e.target.value)}
+                    className={inputClass}
                   />
                 </div>
 
-                {/* URL */}
                 <div>
-                  <label className="block text-sm mb-2">
+                  <label className="mb-2 block text-sm text-slate-300">
                     Project URL
                   </label>
                   <input
                     type="url"
                     value={project.url}
-                    onChange={(e) =>
-                      handleChange("url", e.target.value)
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-blue-500"
+                    onChange={(e) => handleChange("url", e.target.value)}
+                    className={inputClass}
                   />
                 </div>
-
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex justify-end gap-6 px-6 sm:px-8 py-6 border-t border-gray-700">
+            <div className="flex justify-end gap-4 border-t border-white/10 px-8 py-6">
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-200 text-sm"
+                className="px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="bg-blue-600 hover:bg-blue-500 px-8 py-3 rounded-lg text-white"
+                className="rounded-2xl bg-cyan-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
               >
                 Save
               </button>
             </div>
-
           </motion.div>
         </motion.div>
       )}

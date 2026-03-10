@@ -1,90 +1,132 @@
-import React, { useState } from "react";
-// eslint-disable-next-line no-unused-vars
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 
 const LocationFilterPopup = ({
-  locations,
-  selected,
+  locations = [],
+  selected = [],
   setSelected,
   closePopup,
 }) => {
   const [search, setSearch] = useState("");
 
-  const filtered = locations.filter((loc) =>
-    loc.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const safeLocations = Array.isArray(locations) ? locations : [];
+  const safeSelected = Array.isArray(selected) ? selected : [];
+
+  const filteredLocations = useMemo(() => {
+    return safeLocations.filter((loc) =>
+      String(loc?.name || "")
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    );
+  }, [safeLocations, search]);
 
   const toggleLocation = (name) => {
-    if (selected.includes(name)) {
-      setSelected(selected.filter((l) => l !== name));
+    if (safeSelected.includes(name)) {
+      setSelected(safeSelected.filter((l) => l !== name));
     } else {
-      setSelected([...selected, name]);
+      setSelected([...safeSelected, name]);
     }
+  };
+
+  const clearPopupItems = () => {
+    const popupLocationNames = safeLocations.map((loc) => loc.name);
+
+    const remainingSelected = safeSelected.filter(
+      (item) => !popupLocationNames.includes(item)
+    );
+
+    setSelected(remainingSelected);
   };
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
       onClick={closePopup}
     >
       <motion.div
-        initial={{ x: -400 }}
-        animate={{ x: 0 }}
-        exit={{ x: -400 }}
+        initial={{ x: -400, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: -400, opacity: 0 }}
         transition={{ duration: 0.3 }}
         onClick={(e) => e.stopPropagation()}
-        className="absolute top-20 left-10 bg-black border border-gray-700 w-96 max-h-[80vh] rounded-xl p-5 text-white"
+        className="absolute left-6 top-20 w-105 max-w-[92vw] rounded-2xl border border-slate-700 bg-[#020617] p-5 text-white shadow-2xl"
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-semibold">Location</h2>
-          <button onClick={closePopup}>
+        {/* HEADER */}
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">More Locations</h2>
+            <p className="text-xs text-slate-400">
+              {safeLocations.length} Locations
+            </p>
+          </div>
+
+          <button
+            onClick={closePopup}
+            className="text-slate-400 transition hover:text-white"
+          >
             <X size={18} />
           </button>
         </div>
 
+        {/* SEARCH */}
         <input
           type="text"
           placeholder="Search Location"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2 mb-3 bg-black border border-gray-600 rounded text-sm"
+          className="mb-3 w-full rounded-lg border border-slate-600 bg-slate-900 p-2 text-sm text-white outline-none focus:border-cyan-500"
         />
 
-        <div className="max-h-60 overflow-y-auto">
-          {filtered.map((loc) => (
-            <label
-              key={loc.name}
-              className="flex justify-between items-center text-sm mb-2 cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(loc.name)}
-                  onChange={() => toggleLocation(loc.name)}
-                  className="accent-blue-500"
-                />
-                {loc.name}
-              </div>
+        {/* SELECTED COUNT */}
+        {safeSelected.length > 0 && (
+          <p className="mb-2 text-xs text-cyan-400">
+            {safeSelected.length} Selected
+          </p>
+        )}
 
-              <span className="text-xs text-gray-400">
-                ({loc.count})
-              </span>
-            </label>
-          ))}
+        {/* LIST */}
+        <div className="max-h-72 space-y-2 overflow-y-auto pr-2">
+          {filteredLocations.length === 0 ? (
+            <p className="text-sm text-slate-400">No more locations found</p>
+          ) : (
+            filteredLocations.map((loc) => (
+              <label
+                key={loc.name}
+                className="flex cursor-pointer items-center justify-between rounded-md p-2 text-sm text-white hover:bg-slate-800"
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={safeSelected.includes(loc.name)}
+                    onChange={() => toggleLocation(loc.name)}
+                    className="accent-cyan-500"
+                  />
+                  <span>{loc.name}</span>
+                </div>
+
+                <span className="text-xs text-slate-400">
+                  ({loc.count || 0})
+                </span>
+              </label>
+            ))
+          )}
         </div>
 
-        <div className="flex justify-between mt-4">
+        {/* FOOTER */}
+        <div className="mt-4 flex items-center justify-between">
           <button
-            onClick={() => setSelected([])}
-            className="text-red-400 text-xs"
+            onClick={clearPopupItems}
+            className="text-xs text-red-400 hover:text-red-300"
           >
-            Clear All
+            Clear Popup Items
           </button>
 
           <button
             onClick={closePopup}
-            className="bg-blue-600 px-4 py-1 rounded text-sm"
+            className="rounded bg-cyan-600 px-4 py-1.5 text-sm text-white hover:bg-cyan-700"
           >
             Apply
           </button>

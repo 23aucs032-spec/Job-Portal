@@ -1,91 +1,91 @@
 import React, { useEffect, useMemo, useState } from "react";
-import EducationFilterPopup from "./EducationFilterPopup";
+import WorkModeFilterPopup from "./WorkModeFilterPopup";
 
 const API = "http://localhost:5000";
 
-const getEducationName = (edu) =>
-  String(edu?.name || edu?.education || edu?._id || "").trim();
+const getWorkModeName = (item) =>
+  String(item?.name || item?.workMode || item?._id || "").trim();
 
-const EducationFilter = ({ selected = [], setSelected }) => {
-  const [educations, setEducations] = useState([]);
+const WorkModeFilter = ({ selected = [], setSelected }) => {
+  const [workModes, setWorkModes] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const safeSelected = Array.isArray(selected) ? selected : [];
 
   useEffect(() => {
-    const fetchEducations = async () => {
+    const fetchWorkModes = async () => {
       try {
         setLoading(true);
 
-        const res = await fetch(`${API}/api/jobs/education-count`);
+        const res = await fetch(`${API}/api/jobs/work-mode-count`);
         if (!res.ok) {
-          throw new Error("Failed to fetch education counts");
+          throw new Error("Failed to fetch work mode counts");
         }
 
         const data = await res.json();
 
-        const validEducations = Array.isArray(data)
+        const validWorkModes = Array.isArray(data)
           ? data.filter(
-              (item) => getEducationName(item) && Number(item.count) > 0
+              (item) => getWorkModeName(item) && Number(item.count) > 0
             )
           : [];
 
-        setEducations(validEducations);
+        setWorkModes(validWorkModes);
       } catch (error) {
-        console.error("Failed to fetch educations:", error);
-        setEducations([]);
+        console.error("Failed to fetch work modes:", error);
+        setWorkModes([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEducations();
+    fetchWorkModes();
   }, []);
 
-  const firstFour = useMemo(() => educations.slice(0, 4), [educations]);
-  const remainingEducations = useMemo(() => educations.slice(4), [educations]);
+  const firstFour = useMemo(() => workModes.slice(0, 4), [workModes]);
+  const remainingWorkModes = useMemo(() => workModes.slice(4), [workModes]);
 
-  const toggleOption = (eduName) => {
-    if (!eduName) return;
+  const toggleOption = (modeName) => {
+    if (!modeName) return;
 
-    if (safeSelected.includes(eduName)) {
-      setSelected(safeSelected.filter((item) => item !== eduName));
+    if (safeSelected.includes(modeName)) {
+      setSelected(safeSelected.filter((item) => item !== modeName));
     } else {
-      setSelected([...safeSelected, eduName]);
+      setSelected([...safeSelected, modeName]);
     }
   };
 
   return (
     <>
       <div className="mt-6">
-        <h3 className="mb-3 text-sm font-semibold text-white">Education</h3>
+        <h3 className="mb-3 text-sm font-semibold text-white">Work Mode</h3>
 
         {loading ? (
           <p className="text-sm text-slate-400">Loading...</p>
         ) : firstFour.length === 0 ? (
-          <p className="text-sm text-slate-500">No education values found</p>
+          <p className="text-sm text-slate-500">No work modes found</p>
         ) : (
           <div className="space-y-2">
-            {firstFour.map((edu, index) => {
-              const eduName = getEducationName(edu);
+            {firstFour.map((item, index) => {
+              const modeName = getWorkModeName(item);
 
               return (
                 <label
-                  key={edu._id || eduName || index}
+                  key={item._id || modeName || index}
                   className="flex cursor-pointer items-center justify-between text-sm text-slate-300"
                 >
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={safeSelected.includes(eduName)}
-                      onChange={() => toggleOption(eduName)}
+                      checked={safeSelected.includes(modeName)}
+                      onChange={() => toggleOption(modeName)}
                       className="accent-cyan-500"
                     />
-                    <span>{eduName}</span>
+                    <span>{modeName}</span>
                   </div>
 
-                  <span className="text-slate-400">({edu.count || 0})</span>
+                  <span className="text-slate-400">({item.count || 0})</span>
                 </label>
               );
             })}
@@ -98,7 +98,7 @@ const EducationFilter = ({ selected = [], setSelected }) => {
           </p>
         )}
 
-        {remainingEducations.length > 0 && (
+        {remainingWorkModes.length > 0 && (
           <button
             type="button"
             onClick={() => setShowPopup(true)}
@@ -110,15 +110,15 @@ const EducationFilter = ({ selected = [], setSelected }) => {
       </div>
 
       {showPopup && (
-        <EducationFilterPopup
+        <WorkModeFilterPopup
           selected={safeSelected}
           setSelected={setSelected}
           closePopup={() => setShowPopup(false)}
-          educations={remainingEducations}
+          workModes={remainingWorkModes}
         />
       )}
     </>
   );
 };
 
-export default EducationFilter;
+export default WorkModeFilter;

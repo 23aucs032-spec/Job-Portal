@@ -1,13 +1,28 @@
+/* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
+import {
+  Briefcase,
+  MapPin,
+  Building,
+  DollarSign,
+  Users,
+  Calendar,
+  Mail,
+} from "lucide-react";
+
+const API = "http://localhost:5000";
 
 const EditJob = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+
+  const [loading, setLoading] = useState(true);
+  const [skillInput, setSkillInput] = useState("");
+  const [perkInput, setPerkInput] = useState("");
 
   const [jobData, setJobData] = useState({
     title: "",
@@ -25,134 +40,355 @@ const EditJob = () => {
     maxExp: "",
     minSalary: "",
     maxSalary: "",
-    skills: "",
-    perks: "",
+    skills: [],
+    perks: [],
     jobDescription: "",
-    responsibilities: "",
+    responsibilities: [],
     applyBefore: "",
     contactEmail: "",
   });
 
-  // Fetch single job details
+  /* ================= FETCH JOB ================= */
+
   useEffect(() => {
-  if (!token) return;
+    if (!token) return;
 
-  fetch(`http://localhost:5000/api/jobs/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      setJobData({
-        title: data.title || "",
-        companyName: data.companyName || "",
-        consultancyName: data.consultancyName || "",
-        hiringFor: data.hiringFor || "",
-        workMode: data.workMode || "",
-        department: data.department || "",
-        location: data.location || "",
-        companyType: data.companyType || "",
-        roleCategory: data.roleCategory || "",
-        education: data.education || "",
-        industry: data.industry || "",
-        minExp: data.minExp || "",
-        maxExp: data.maxExp || "",
-        minSalary: data.minSalary || "",
-        maxSalary: data.maxSalary || "",
-        skills: data.skills?.join(", ") || "",
-        perks: data.perks?.join(", ") || "",
-        jobDescription: data.jobDescription || "",
-        responsibilities: data.responsibilities?.join("\n") || "",
-        applyBefore: data.applyBefore ? data.applyBefore.split("T")[0] : "",
-        contactEmail: data.contactEmail || "",
-      });
-    })
-    .catch((err) => console.error("Error fetching job:", err));
-}, [id, token]);
+    const fetchJob = async () => {
+      try {
+        const res = await fetch(`${API}/api/jobs/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
+        const data = await res.json();
 
-  // Handle input change
-  const handleChange = (e) => {
-    setJobData({ ...jobData, [e.target.name]: e.target.value });
-  };
+        setJobData({
+          ...data,
+          skills: data.skills || [],
+          perks: data.perks || [],
+          responsibilities: data.responsibilities || [],
+          applyBefore: data.applyBefore
+            ? data.applyBefore.split("T")[0]
+            : "",
+        });
 
-  // Handle update submit
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const updatedJob = {
-      ...jobData,
-      skills: jobData.skills.split(",").map((s) => s.trim()),
-      perks: jobData.perks.split(",").map((p) => p.trim()),
-      responsibilities: jobData.responsibilities
-        .split("\n")
-        .map((r) => r.trim())
-        .filter((r) => r.length > 0),
+        setLoading(false);
+      } catch (err) {
+        console.error("Fetch Job Error:", err);
+        setLoading(false);
+      }
     };
 
-    fetch(`http://localhost:5000/api/jobs/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(updatedJob),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        alert("Job updated successfully!");
-        navigate("/manage-jobs");
-      })
-      .catch((err) => console.error("Error updating job:", err));
+    fetchJob();
+  }, [id, token]);
+
+  /* ================= INPUT CHANGE ================= */
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setJobData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
+
+  /* ================= SKILLS ================= */
+
+  const addSkill = () => {
+    if (!skillInput) return;
+
+    if (!jobData.skills.includes(skillInput)) {
+      setJobData((prev) => ({
+        ...prev,
+        skills: [...prev.skills, skillInput],
+      }));
+    }
+
+    setSkillInput("");
+  };
+
+  const removeSkill = (skill) => {
+    setJobData((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => s !== skill),
+    }));
+  };
+
+  /* ================= PERKS ================= */
+
+  const addPerk = () => {
+    if (!perkInput) return;
+
+    if (!jobData.perks.includes(perkInput)) {
+      setJobData((prev) => ({
+        ...prev,
+        perks: [...prev.perks, perkInput],
+      }));
+    }
+
+    setPerkInput("");
+  };
+
+  const removePerk = (perk) => {
+    setJobData((prev) => ({
+      ...prev,
+      perks: prev.perks.filter((p) => p !== perk),
+    }));
+  };
+
+  /* ================= RESPONSIBILITIES ================= */
+
+  const handleResponsibilities = (e) => {
+    const list = e.target.value.split("\n");
+
+    setJobData((prev) => ({
+      ...prev,
+      responsibilities: list,
+    }));
+  };
+
+  /* ================= UPDATE JOB ================= */
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`${API}/api/jobs/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(jobData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      alert("Job updated successfully!");
+
+      navigate("/manage-jobs");
+    } catch (err) {
+      console.error("Update Job Error:", err);
+      alert("Failed to update job");
+    }
+  };
+
+  const inputStyle =
+    "w-full bg-slate-900 border border-slate-700 p-3 rounded-xl focus:outline-none focus:border-cyan-400 mb-4";
+
+  if (loading) {
+    return (
+      <div className="text-center text-white mt-20">Loading job...</div>
+    );
+  }
 
   return (
     <>
       <AnimatedBackground />
 
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-6 text-white">
+      <div className="flex justify-center px-4 py-10 text-white">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-2xl p-8 border border-gray-800 shadow-xl bg-black/70 backdrop-blur-lg rounded-2xl"
+          className="w-full max-w-4xl p-10 bg-black/70 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800"
         >
-          <h2 className="mb-6 text-3xl font-bold text-center">Edit Job</h2>
+          <h1 className="text-3xl font-bold mb-8 text-center text-transparent bg-linear-to-r from-cyan-400 to-teal-400 bg-clip-text">
+            Edit Job
+          </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Basic Info */}
-            <input type="text" name="title" value={jobData.title} onChange={handleChange} placeholder="Job Title" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" required />
-            <input type="text" name="companyName" value={jobData.companyName} onChange={handleChange} placeholder="Company Name" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="consultancyName" value={jobData.consultancyName} onChange={handleChange} placeholder="Consultancy Name" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="hiringFor" value={jobData.hiringFor} onChange={handleChange} placeholder="Hiring For" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
+          <form onSubmit={handleSubmit}>
+            {/* JOB INFO */}
 
-            {/* Work Info */}
-            <input type="text" name="workMode" value={jobData.workMode} onChange={handleChange} placeholder="Work Mode (Remote / Hybrid / Onsite)" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="department" value={jobData.department} onChange={handleChange} placeholder="Department" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="location" value={jobData.location} onChange={handleChange} placeholder="Location" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="companyType" value={jobData.companyType} onChange={handleChange} placeholder="Company Type" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="roleCategory" value={jobData.roleCategory} onChange={handleChange} placeholder="Role Category" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="education" value={jobData.education} onChange={handleChange} placeholder="Education Required" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="industry" value={jobData.industry} onChange={handleChange} placeholder="Industry" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
+            <h3 className="flex items-center gap-2 text-xl mb-4">
+              <Briefcase /> Job Info
+            </h3>
 
-            {/* Experience & Salary */}
+            <input
+              name="title"
+              value={jobData.title}
+              onChange={handleChange}
+              placeholder="Job Title"
+              className={inputStyle}
+            />
+
+            <input
+              name="location"
+              value={jobData.location}
+              onChange={handleChange}
+              placeholder="Location"
+              className={inputStyle}
+            />
+
+            <select
+              name="workMode"
+              value={jobData.workMode}
+              onChange={handleChange}
+              className={inputStyle}
+            >
+              <option value="">Work Mode</option>
+              <option>Remote</option>
+              <option>Hybrid</option>
+              <option>Onsite</option>
+            </select>
+
+            {/* EXPERIENCE */}
+
+            <h3 className="flex items-center gap-2 text-xl mt-8 mb-4">
+              <Users /> Experience
+            </h3>
+
             <div className="grid grid-cols-2 gap-4">
-              <input type="number" name="minExp" value={jobData.minExp} onChange={handleChange} placeholder="Min Experience" className="p-3 bg-gray-800 border border-gray-700 rounded" />
-              <input type="number" name="maxExp" value={jobData.maxExp} onChange={handleChange} placeholder="Max Experience" className="p-3 bg-gray-800 border border-gray-700 rounded" />
+              <input
+                name="minExp"
+                value={jobData.minExp}
+                onChange={handleChange}
+                placeholder="Min Experience"
+                className={inputStyle}
+              />
+
+              <input
+                name="maxExp"
+                value={jobData.maxExp}
+                onChange={handleChange}
+                placeholder="Max Experience"
+                className={inputStyle}
+              />
             </div>
+
+            {/* SALARY */}
+
+            <h3 className="flex items-center gap-2 text-xl mt-8 mb-4">
+              <DollarSign /> Salary
+            </h3>
+
             <div className="grid grid-cols-2 gap-4">
-              <input type="number" name="minSalary" value={jobData.minSalary} onChange={handleChange} placeholder="Min Salary" className="p-3 bg-gray-800 border border-gray-700 rounded" />
-              <input type="number" name="maxSalary" value={jobData.maxSalary} onChange={handleChange} placeholder="Max Salary" className="p-3 bg-gray-800 border border-gray-700 rounded" />
+              <input
+                name="minSalary"
+                value={jobData.minSalary}
+                onChange={handleChange}
+                placeholder="Min Salary"
+                className={inputStyle}
+              />
+
+              <input
+                name="maxSalary"
+                value={jobData.maxSalary}
+                onChange={handleChange}
+                placeholder="Max Salary"
+                className={inputStyle}
+              />
             </div>
 
-            {/* Skills & Perks */}
-            <input type="text" name="skills" value={jobData.skills} onChange={handleChange} placeholder="Skills (comma separated)" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="text" name="perks" value={jobData.perks} onChange={handleChange} placeholder="Perks (comma separated)" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
+            {/* SKILLS */}
 
-            {/* Job Description */}
-            <textarea name="jobDescription" value={jobData.jobDescription} onChange={handleChange} placeholder="Job Description" rows={4} className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <textarea name="responsibilities" value={jobData.responsibilities} onChange={handleChange} placeholder="Responsibilities (one per line)" rows={4} className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
+            <h3 className="text-xl mt-8 mb-4">Skills</h3>
 
-            {/* Apply Before & Contact */}
-            <input type="date" name="applyBefore" value={jobData.applyBefore} onChange={handleChange} className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
-            <input type="email" name="contactEmail" value={jobData.contactEmail} onChange={handleChange} placeholder="Contact Email" className="w-full p-3 bg-gray-800 border border-gray-700 rounded" />
+            <input
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              placeholder="Add Skill"
+              className={inputStyle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addSkill();
+                }
+              }}
+            />
 
-            <button type="submit" className="w-full py-3 font-semibold bg-blue-600 rounded hover:bg-blue-700">Update Job</button>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {jobData.skills.map((skill) => (
+                <span
+                  key={skill}
+                  className="bg-cyan-500 text-black px-3 py-1 rounded-full flex gap-2 items-center"
+                >
+                  {skill}
+                  <button onClick={() => removeSkill(skill)}>✕</button>
+                </span>
+              ))}
+            </div>
+
+            {/* PERKS */}
+
+            <h3 className="text-xl mt-8 mb-4">Perks</h3>
+
+            <input
+              value={perkInput}
+              onChange={(e) => setPerkInput(e.target.value)}
+              placeholder="Add Perk"
+              className={inputStyle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addPerk();
+                }
+              }}
+            />
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {jobData.perks.map((perk) => (
+                <span
+                  key={perk}
+                  className="bg-green-500 text-black px-3 py-1 rounded-full flex gap-2 items-center"
+                >
+                  {perk}
+                  <button onClick={() => removePerk(perk)}>✕</button>
+                </span>
+              ))}
+            </div>
+
+            {/* DESCRIPTION */}
+
+            <h3 className="text-xl mt-8 mb-4">Job Description</h3>
+
+            <textarea
+              name="jobDescription"
+              value={jobData.jobDescription}
+              onChange={handleChange}
+              rows="4"
+              placeholder="Job Description"
+              className={inputStyle}
+            />
+
+            <textarea
+              value={jobData.responsibilities.join("\n")}
+              onChange={handleResponsibilities}
+              rows="4"
+              placeholder="Responsibilities (one per line)"
+              className={inputStyle}
+            />
+
+            {/* APPLY BEFORE */}
+
+            <h3 className="flex items-center gap-2 text-xl mt-8 mb-4">
+              <Calendar /> Application
+            </h3>
+
+            <input
+              type="date"
+              name="applyBefore"
+              value={jobData.applyBefore}
+              onChange={handleChange}
+              className={inputStyle}
+            />
+
+            <input
+              name="contactEmail"
+              value={jobData.contactEmail}
+              onChange={handleChange}
+              placeholder="Contact Email"
+              className={inputStyle}
+            />
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-full py-3 mt-6 bg-linear-to-r from-cyan-500 to-teal-500 text-black font-bold rounded-xl"
+            >
+              Update Job
+            </motion.button>
           </form>
         </motion.div>
       </div>

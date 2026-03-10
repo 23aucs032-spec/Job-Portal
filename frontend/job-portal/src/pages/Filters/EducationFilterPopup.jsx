@@ -1,101 +1,124 @@
-import React, { useState } from "react";
-import { X } from "lucide-react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import React, { useEffect, useMemo, useState } from "react";
+import EducationFilterPopup from "./EducationFilterPopup";
 
-const EducationFilterPopup = ({
-  selected,
-  setSelected,
-  closePopup,
-  educations,
-}) => {
-  const [search, setSearch] = useState("");
+const API = "http://localhost:5000";
 
-  const toggleOption = (edu) => {
-    if (selected.includes(edu)) {
-      setSelected(selected.filter((item) => item !== edu));
+const getEducationName = (edu) =>
+  String(edu?.name || edu?.education || edu?._id || "").trim();
+
+const EducationFilter = ({ selected = [], setSelected }) => {
+  const [educations, setEducations] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const safeSelected = Array.isArray(selected) ? selected : [];
+
+  useEffect(() => {
+    const fetchEducations = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${API}/api/jobs/education-count`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch education counts");
+        }
+
+        const data = await res.json();
+
+        const validEducations = Array.isArray(data)
+          ? data.filter(
+              (item) => getEducationName(item) && Number(item.count) > 0
+            )
+          : [];
+
+        setEducations(validEducations);
+      } catch (error) {
+        console.error("Failed to fetch educations:", error);
+        setEducations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEducations();
+  }, []);
+
+  const firstFour = useMemo(() => educations.slice(0, 4), [educations]);
+  const remainingEducations = useMemo(() => educations.slice(4), [educations]);
+
+  const toggleOption = (eduName) => {
+    if (!eduName) return;
+
+    if (safeSelected.includes(eduName)) {
+      setSelected(safeSelected.filter((item) => item !== eduName));
     } else {
-      setSelected([...selected, edu]);
+      setSelected([...safeSelected, eduName]);
     }
   };
 
-  const clearAll = () => {
-    setSelected([]);
-  };
-
-  const filtered = educations.filter((edu) =>
-    edu.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <div className="fixed inset-0 z-50 flex">
-      <div
-        className="fixed inset-0 bg-black/60"
-        onClick={closePopup}
-      ></div>
+    <>
+      <div className="mt-6">
+        <h3 className="mb-3 text-sm font-semibold text-white">Education</h3>
 
-      <motion.div
-        initial={{ x: "-100%" }}
-        animate={{ x: 0 }}
-        transition={{ duration: 0.3 }}
-        className="relative w-96 h-full bg-[#0f172a] shadow-xl p-5 border-r border-gray-700"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-white">
-            Education
-          </h2>
-          <button onClick={closePopup}>
-            <X className="text-gray-400 hover:text-white" size={20} />
+        {loading ? (
+          <p className="text-sm text-slate-400">Loading...</p>
+        ) : firstFour.length === 0 ? (
+          <p className="text-sm text-slate-500">No education values found</p>
+        ) : (
+          <div className="space-y-2">
+            {firstFour.map((edu, index) => {
+              const eduName = getEducationName(edu);
+
+              return (
+                <label
+                  key={edu._id || eduName || index}
+                  className="flex cursor-pointer items-center justify-between text-sm text-slate-300"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={safeSelected.includes(eduName)}
+                      onChange={() => toggleOption(eduName)}
+                      className="accent-cyan-500"
+                    />
+                    <span>{eduName}</span>
+                  </div>
+
+                  <span className="text-slate-400">({edu.count || 0})</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+
+        {safeSelected.length > 0 && (
+          <p className="mt-2 text-xs text-cyan-400">
+            {safeSelected.length} selected
+          </p>
+        )}
+
+        {remainingEducations.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowPopup(true)}
+            className="mt-3 text-sm font-medium text-cyan-400 hover:text-cyan-300"
+          >
+            View More
           </button>
-        </div>
+        )}
+      </div>
 
-        <input
-          type="text"
-          placeholder="Search Education"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full mb-4 px-3 py-2 rounded-md bg-[#1e293b] text-white border border-gray-600"
+      {showPopup && (
+        <EducationFilterPopup
+          selected={safeSelected}
+          setSelected={setSelected}
+          closePopup={() => setShowPopup(false)}
+          educations={remainingEducations}
         />
-
-        <div className="flex-1 max-h-[65vh] overflow-y-auto space-y-2 pr-2">
-          {filtered.map((edu) => (
-            <label
-              key={edu.name}
-              className="flex justify-between items-center text-sm text-white cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(edu.name)}
-                  onChange={() => toggleOption(edu.name)}
-                />
-                {edu.name}
-              </div>
-              <span className="text-gray-400">
-                ({edu.count})
-              </span>
-            </label>
-          ))}
-        </div>
-
-        <div className="absolute bottom-5 left-5 right-5 flex justify-between">
-          <button
-            onClick={clearAll}
-            className="text-red-400 text-sm"
-          >
-            Clear All
-          </button>
-
-          <button
-            onClick={closePopup}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm"
-          >
-            Apply
-          </button>
-        </div>
-      </motion.div>
-    </div>
+      )}
+    </>
   );
 };
 
-export default EducationFilterPopup;
+export default EducationFilter;

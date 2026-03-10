@@ -1,78 +1,125 @@
-import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import React, { useEffect, useMemo, useState } from "react";
+import SalaryFilterPopup from "./SalaryFilterPopup";
 
-const SalaryFilter = ({ selected, setSelected, closePopup }) => {
+const API = "http://localhost:5000";
+
+const getSalaryValue = (item) => String(item?.value || "").trim();
+const getSalaryName = (item) =>
+  String(item?.name || item?.label || item?.value || "").trim();
+
+const SalaryFilter = ({ selected = [], setSelected }) => {
   const [salaryRanges, setSalaryRanges] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const safeSelected = Array.isArray(selected) ? selected : [];
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/jobs/salary-count")
-      .then((res) => res.json())
-      .then((data) => setSalaryRanges(data))
-      .catch(() => setSalaryRanges([]));
+    const fetchSalaryRanges = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${API}/api/jobs/salary-count`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch salary ranges");
+        }
+
+        const data = await res.json();
+
+        const validRanges = Array.isArray(data)
+          ? data.filter(
+              (item) => getSalaryValue(item) && Number(item.count) > 0
+            )
+          : [];
+
+        setSalaryRanges(validRanges);
+      } catch (error) {
+        console.error("Failed to fetch salary ranges:", error);
+        setSalaryRanges([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSalaryRanges();
   }, []);
 
+  const firstFour = useMemo(() => salaryRanges.slice(0, 4), [salaryRanges]);
+  const remainingRanges = useMemo(() => salaryRanges.slice(4), [salaryRanges]);
+
   const toggleSalary = (value) => {
-    if (selected.includes(value)) {
-      setSelected(selected.filter((s) => s !== value));
+    if (!value) return;
+
+    if (safeSelected.includes(value)) {
+      setSelected(safeSelected.filter((item) => item !== value));
     } else {
-      setSelected([...selected, value]);
+      setSelected([...safeSelected, value]);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="absolute left-0 top-12 w-80 bg-white shadow-2xl rounded-xl border z-50"
-    >
-      {/* Header */}
-      <div className="flex justify-between items-center px-4 py-3 border-b">
-        <h3 className="font-semibold text-lg">Salary</h3>
-        <X
-          className="cursor-pointer text-gray-500 hover:text-black"
-          size={18}
-          onClick={closePopup}
-        />
-      </div>
+    <>
+      <div className="mt-6">
+        <h3 className="mb-3 text-sm font-semibold text-white">Salary</h3>
 
-      {/* Salary List */}
-      <div className="p-4 max-h-80 overflow-y-auto space-y-3">
-        {salaryRanges.map((range) => (
-          <label
-            key={range.value}
-            className="flex items-center justify-between cursor-pointer group"
+        {loading ? (
+          <p className="text-sm text-slate-400">Loading...</p>
+        ) : firstFour.length === 0 ? (
+          <p className="text-sm text-slate-500">No salary ranges found</p>
+        ) : (
+          <div className="space-y-2">
+            {firstFour.map((range, index) => {
+              const value = getSalaryValue(range);
+              const name = getSalaryName(range);
+
+              return (
+                <label
+                  key={value || index}
+                  className="flex cursor-pointer items-center justify-between text-sm text-slate-300"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={safeSelected.includes(value)}
+                      onChange={() => toggleSalary(value)}
+                      className="accent-cyan-500"
+                    />
+                    <span>{name}</span>
+                  </div>
+
+                  <span className="text-slate-400">({range.count || 0})</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+
+        {safeSelected.length > 0 && (
+          <p className="mt-2 text-xs text-cyan-400">
+            {safeSelected.length} selected
+          </p>
+        )}
+
+        {remainingRanges.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowPopup(true)}
+            className="mt-3 text-sm font-medium text-cyan-400 hover:text-cyan-300"
           >
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={selected.includes(range.value)}
-                onChange={() => toggleSalary(range.value)}
-                className="w-4 h-4 accent-blue-600"
-              />
-              <span className="text-sm text-gray-700 group-hover:text-blue-600">
-                {range.name}
-              </span>
-            </div>
-
-            <span className="text-xs text-gray-500">
-              ({range.count})
-            </span>
-          </label>
-        ))}
+            View More
+          </button>
+        )}
       </div>
 
-      {/* Apply Button */}
-      <div className="p-4 border-t">
-        <button
-          onClick={closePopup}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-full font-medium"
-        >
-          Apply
-        </button>
-      </div>
-    </motion.div>
+      {showPopup && (
+        <SalaryFilterPopup
+          selected={safeSelected}
+          setSelected={setSelected}
+          closePopup={() => setShowPopup(false)}
+          salaryRanges={remainingRanges}
+        />
+      )}
+    </>
   );
 };
 

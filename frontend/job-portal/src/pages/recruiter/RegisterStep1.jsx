@@ -1,357 +1,277 @@
 /* eslint-disable no-unused-vars */
-
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
 import axios from "axios";
+import AnimatedBackground from "../LandingPage/components/AnimatedBackground";
 
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth } from "./components/firebase";
+const API = "http://localhost:5000";
 
 const RegisterStep1 = () => {
-
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    companyEmail: "",
-    companyPhone: "",
+    accountType: "company/business",
+    fullName: "",
+    officialEmail: "",
+    password: "",
     emailOtp: "",
-    phoneOtp: "",
   });
 
+  const [loading, setLoading] = useState(false);
   const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
-
   const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const [confirmationResult, setConfirmationResult] = useState(null);
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  /* ================= VALIDATION ================= */
+  const validateForm = () => {
+    const newErrors = {};
 
-  const validateEmail = (email) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return pattern.test(email);
-  };
-
-  const validatePhone = (phone) => /^\d{10}$/.test(phone);
-
-  const formatPhone = (phone) => `+91${phone}`;
-
-  /* ================= EMAIL OTP ================= */
-
-  const sendEmailOtp = async () => {
-
-    if (!validateEmail(form.companyEmail)) {
-      alert("Enter valid email");
-      return;
+    if (!form.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
     }
 
-    try {
+    if (!validateEmail(form.officialEmail)) {
+      newErrors.officialEmail = "Enter a valid official email";
+    }
 
-      const res = await axios.post(
-        "http://localhost:5000/api/otp/send-email-otp",
-        { email: form.companyEmail }
-      );
+    if (!form.password || form.password.length < 8) {
+      newErrors.password = "Password must be 8 to 40 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const sendEmailOtp = async () => {
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(`${API}/api/otp/send-email-otp`, {
+        email: form.officialEmail,
+      });
 
       if (res.data.success) {
         setEmailOtpSent(true);
         alert("Email OTP sent successfully");
       }
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send Email OTP");
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "Failed to send email OTP");
+    } finally {
+      setLoading(false);
     }
-
   };
 
   const verifyEmailOtp = async () => {
-
-    if (!form.emailOtp) {
-      alert("Enter Email OTP");
+    if (!form.emailOtp.trim()) {
+      alert("Enter email OTP");
       return;
     }
 
     try {
+      setLoading(true);
 
-      const res = await axios.post(
-        "http://localhost:5000/api/otp/verify-email-otp",
-        {
-          email: form.companyEmail,
-          otp: form.emailOtp,
-        }
-      );
+      const res = await axios.post(`${API}/api/otp/verify-email-otp`, {
+        email: form.officialEmail,
+        otp: form.emailOtp,
+      });
 
       if (res.data.success) {
         setEmailVerified(true);
         alert("Email verified successfully");
       }
-
-    } catch (err) {
-      console.error(err);
-      alert("Invalid Email OTP");
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "Invalid email OTP");
+    } finally {
+      setLoading(false);
     }
-
   };
 
-  /* ================= FIREBASE PHONE OTP ================= */
-
-  const setupRecaptcha = () => {
-
-  if (!window.recaptchaVerifier) {
-
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      auth,
-      "recaptcha-container",
-      {
-        size: "invisible",
-        callback: () => {
-          console.log("Recaptcha Verified");
-        }
-      }
-    );
-
-  }
-
-};
-
-  const sendPhoneOtp = async () => {
-
-  if (!form.companyPhone) {
-    alert("Enter phone number");
-    return;
-  }
-
-  try {
-
-    setupRecaptcha();
-
-    const appVerifier = window.recaptchaVerifier;
-
-    const result = await signInWithPhoneNumber(
-      auth,
-      "+91" + form.companyPhone,
-      appVerifier
-    );
-
-    setConfirmationResult(result);
-    setPhoneOtpSent(true);
-
-    alert("OTP sent successfully");
-
-  } catch (error) {
-
-    console.error(error);
-    alert(error.message);
-
-  }
-
-};
-
-  const verifyPhoneOtp = async () => {
-
-  if (!form.phoneOtp) {
-    alert("Enter OTP");
-    return;
-  }
-
-  try {
-
-    await confirmationResult.confirm(form.phoneOtp);
-
-    setPhoneVerified(true);
-
-    alert("Phone verified successfully");
-
-  } catch (error) {
-
-    console.error(error);
-    alert("Invalid OTP");
-
-  }
-
-};
-
-  /* ================= NEXT ================= */
-
   const handleNext = (e) => {
-
     e.preventDefault();
 
+    if (!validateForm()) return;
+
     if (!emailVerified) {
-      alert("Verify email first");
+      alert("Please verify your email first");
       return;
     }
 
-    if (!phoneVerified) {
-      alert("Verify phone first");
-      return;
-    }
-
-    localStorage.setItem("companyDetails", JSON.stringify(form));
+    localStorage.setItem(
+      "recruiterRegisterStep1",
+      JSON.stringify({
+        accountType: form.accountType,
+        fullName: form.fullName,
+        email: form.officialEmail,
+        password: form.password,
+      })
+    );
 
     navigate("/recruiter/register-step2");
-
   };
 
   return (
     <>
       <AnimatedBackground />
 
-      <div className="flex items-center justify-center min-h-screen px-4 text-white">
-
+      <div className="flex items-center justify-center min-h-screen px-4 py-10 text-white">
         <motion.form
           onSubmit={handleNext}
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="bg-[#0B1120]/90 backdrop-blur-2xl p-10 rounded-3xl shadow-2xl w-full max-w-md border border-cyan-500/30"
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-lg rounded-3xl border border-cyan-500/30 bg-[#0B1120]/90 p-8 shadow-2xl backdrop-blur-xl"
         >
-
-          <h2 className="mb-8 text-3xl font-bold text-center text-transparent bg-linear-to-r from-cyan-400 to-blue-500 bg-clip-text">
-            Company Contact
+          <h2 className="mb-2 text-3xl font-bold text-center text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500">
+            Basic Details
           </h2>
 
-          {/* EMAIL */}
+          <p className="mb-8 text-sm text-center text-slate-300">
+            Create your recruiter account
+          </p>
 
-          <div className="mb-6">
-
+          <div className="mb-5">
             <label className="block mb-2 text-sm text-cyan-300">
-              Company Email
+              You're creating account as
+            </label>
+
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="accountType"
+                  value="company/business"
+                  checked={form.accountType === "company/business"}
+                  onChange={(e) =>
+                    setForm({ ...form, accountType: e.target.value })
+                  }
+                />
+                Company / Business
+              </label>
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="accountType"
+                  value="individual/proprietor"
+                  checked={form.accountType === "individual/proprietor"}
+                  onChange={(e) =>
+                    setForm({ ...form, accountType: e.target.value })
+                  }
+                />
+                Individual / Proprietor
+              </label>
+            </div>
+          </div>
+
+          <div className="mb-5">
+            <label className="block mb-2 text-sm text-cyan-300">Full Name</label>
+            <input
+              type="text"
+              placeholder="Name as per PAN"
+              value={form.fullName}
+              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+              className="w-full rounded-xl border border-cyan-500/40 bg-[#020617] p-3 outline-none focus:border-cyan-400"
+            />
+            {errors.fullName && (
+              <p className="mt-1 text-sm text-red-400">{errors.fullName}</p>
+            )}
+          </div>
+
+          <div className="mb-5">
+            <label className="block mb-2 text-sm text-cyan-300">
+              Official Email ID
             </label>
 
             <div className="flex gap-2">
-
               <input
                 type="email"
-                placeholder="example@company.com"
-                value={form.companyEmail}
+                placeholder="Enter email ID"
+                value={form.officialEmail}
                 onChange={(e) =>
-                  setForm({ ...form, companyEmail: e.target.value })
+                  setForm({
+                    ...form,
+                    officialEmail: e.target.value,
+                    emailVerified: false,
+                  })
                 }
-                className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl"
+                className="w-full rounded-xl border border-cyan-500/40 bg-[#020617] p-3 outline-none focus:border-cyan-400"
               />
 
               <button
                 type="button"
                 onClick={sendEmailOtp}
-                className="px-4 bg-cyan-600 rounded-xl"
+                disabled={loading}
+                className="px-4 py-3 font-medium rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50"
               >
-                Send
+                Send OTP
               </button>
-
             </div>
 
-            {emailOtpSent && (
+            {errors.officialEmail && (
+              <p className="mt-1 text-sm text-red-400">{errors.officialEmail}</p>
+            )}
 
+            {emailOtpSent && !emailVerified && (
               <div className="flex gap-2 mt-3">
-
                 <input
                   type="text"
-                  placeholder="Enter Email OTP"
+                  placeholder="Enter email OTP"
                   value={form.emailOtp}
                   onChange={(e) =>
                     setForm({ ...form, emailOtp: e.target.value })
                   }
-                  className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl"
+                  className="w-full rounded-xl border border-cyan-500/40 bg-[#020617] p-3 outline-none focus:border-cyan-400"
                 />
 
                 <button
                   type="button"
                   onClick={verifyEmailOtp}
-                  className="px-4 bg-green-600 rounded-xl"
+                  disabled={loading}
+                  className="px-4 py-3 font-medium bg-green-600 rounded-xl hover:bg-green-700 disabled:opacity-50"
                 >
                   Verify
                 </button>
-
               </div>
-
             )}
 
             {emailVerified && (
-              <p className="mt-2 text-green-400">✅ Email Verified</p>
+              <p className="mt-2 text-sm text-green-400">✅ Email verified</p>
             )}
-
           </div>
 
-          {/* PHONE */}
-
-          <div className="mb-6">
-
+          <div className="mb-7">
             <label className="block mb-2 text-sm text-cyan-300">
-              Company Phone
+              Create Password
             </label>
-
-            <div className="flex gap-2">
-
-              <input
-                type="tel"
-                placeholder="Enter 10 digit phone number"
-                value={form.companyPhone}
-                onChange={(e) =>
-                  setForm({ ...form, companyPhone: e.target.value })
-                }
-                className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl"
-              />
-
-              <button
-                type="button"
-                onClick={sendPhoneOtp}
-                className="px-4 bg-cyan-600 rounded-xl"
-              >
-                Send
-              </button>
-
-            </div>
-
-            {phoneOtpSent && (
-
-              <div className="flex gap-2 mt-3">
-
-                <input
-                  type="text"
-                  placeholder="Enter Phone OTP"
-                  value={form.phoneOtp}
-                  onChange={(e) =>
-                    setForm({ ...form, phoneOtp: e.target.value })
-                  }
-                  className="w-full bg-[#020617] border border-cyan-500/40 p-3 rounded-xl"
-                />
-
-                <button
-                  type="button"
-                  onClick={verifyPhoneOtp}
-                  className="px-4 bg-green-600 rounded-xl"
-                >
-                  Verify
-                </button>
-
-              </div>
-
+            <input
+              type="password"
+              placeholder="Enter new password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full rounded-xl border border-cyan-500/40 bg-[#020617] p-3 outline-none focus:border-cyan-400"
+            />
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-400">{errors.password}</p>
             )}
-
-            {phoneVerified && (
-              <p className="mt-2 text-green-400">✅ Phone Verified</p>
-            )}
-
+            <p className="mt-2 text-xs text-slate-400">8 - 40 characters</p>
           </div>
 
           <motion.button
+            whileHover={{ scale: 1.02 }}
             type="submit"
-            disabled={!emailVerified || !phoneVerified}
-            className="w-full py-3 bg-linear-to-r from-cyan-600 to-blue-600 rounded-xl disabled:opacity-50"
+            disabled={!emailVerified}
+            className="w-full py-3 font-semibold rounded-xl bg-linear-to-r from-cyan-600 to-blue-600 disabled:opacity-50"
           >
-            Next →
+            Continue
           </motion.button>
-
         </motion.form>
-
       </div>
-
-      {/* Firebase Recaptcha */}
-      <div id="recaptcha-container"></div>
     </>
   );
 };

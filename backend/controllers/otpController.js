@@ -1,148 +1,106 @@
-const EmailOTP = require("../models/emailOtpModel");
-const PhoneVerification = require("../models/phoneVerificationModel");
-const sendEmailOTP = require("../utils/sendMail");
+const nodemailer = require("nodemailer");
+const EmailOtp = require("../models/EmailOtp");
 
+const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-/* ================= SEND EMAIL OTP ================= */
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-const sendEmailOtp = async (req, res) => {
-
+exports.sendEmailOtp = async (req, res) => {
   try {
-
     const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: "Email required"
+        message: "Email is required",
       });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    await EmailOTP.deleteMany({ email });
+    await EmailOtp.findOneAndDelete({ email });
 
-    const newOtp = new EmailOTP({
+    await EmailOtp.create({
       email,
-      otp
+      otp,
+      expiresAt,
+      verified: false,
     });
 
-    await newOtp.save();
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your Email OTP",
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Email Verification OTP</h2>
+          <p>Your OTP is:</p>
+          <h1 style="letter-spacing: 4px;">${otp}</h1>
+          <p>This OTP will expire in 5 minutes.</p>
+        </div>
+      `,
+    });
 
-    await sendEmailOTP(email, otp);
-
-    res.json({
+    return res.status(200).json({
       success: true,
-      message: "Email OTP sent"
+      message: "OTP sent successfully",
     });
-
   } catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
+    console.error("sendEmailOtp error:", error);
+    return res.status(500).json({
       success: false,
-      message: "Failed to send email OTP"
+      message: "Failed to send OTP",
     });
-
   }
-
 };
 
-
-/* ================= VERIFY EMAIL OTP ================= */
-
-const verifyEmailOtp = async (req, res) => {
-
+exports.verifyEmailOtp = async (req, res) => {
   try {
-
     const { email, otp } = req.body;
 
-    const record = await EmailOTP.findOne({ email, otp });
-
-    if (!record) {
-
+    if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired OTP"
+        message: "Email and OTP are required",
       });
-
     }
 
-    await EmailOTP.deleteMany({ email });
+    const otpDoc = await EmailOtp.findOne({ email, otp });
 
-    res.json({
-      success: true,
-      message: "Email verified successfully"
-    });
-
-  } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      message: "OTP verification failed"
-    });
-
-  }
-
-};
-
-
-/* ================= SAVE VERIFIED PHONE ================= */
-
-const saveVerifiedPhone = async (req, res) => {
-
-  try {
-
-    const { phone } = req.body;
-
-    if (!phone) {
-
+    if (!otpDoc) {
       return res.status(400).json({
         success: false,
-        message: "Phone required"
+        message: "Invalid OTP",
       });
-
     }
 
-    const phoneRecord = await PhoneVerification.findOneAndUpdate(
+    if (otpDoc.expiresAt < new Date()) {
+      await EmailOtp.findByIdAndDelete(otpDoc._id);
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
 
-      { phone },
+    otpDoc.verified = true;
+    await otpDoc.save();
 
-      {
-        phone,
-        verified: true,
-        verifiedAt: Date.now()
-      },
-
-      {
-        upsert: true,
-        returnDocument: "after"
-      }
-
-    );
-
-    res.json({
+    return res.status(200).json({
       success: true,
-      message: "Phone verified successfully",
-      data: phoneRecord
+      message: "Email verified successfully",
     });
-
   } catch (error) {
-
-    console.error(error);
-
-    res.status(500).json({
+    console.error("verifyEmailOtp error:", error);
+    return res.status(500).json({
       success: false,
-      message: "Failed to save phone verification"
+      message: "OTP verification failed",
     });
-
   }
-
-};
-
-module.exports = {
-  sendEmailOtp,
-  verifyEmailOtp,
-  saveVerifiedPhone
 };

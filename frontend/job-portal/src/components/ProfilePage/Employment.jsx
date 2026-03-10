@@ -1,5 +1,5 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect } from "react";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -10,8 +10,6 @@ const EmploymentModal = ({
   onClose,
   onSave,
 }) => {
-
-  /* Lock Background Scroll */
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -20,20 +18,18 @@ const EmploymentModal = ({
   }, []);
 
   const modalVariants = {
-    hidden: { opacity: 0, y: 80, scale: 0.95 },
+    hidden: { opacity: 0, y: 80, scale: 0.96 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.35 },
+      transition: { duration: 0.3 },
     },
-    exit: {
-      opacity: 0,
-      y: 60,
-      scale: 0.95,
-      transition: { duration: 0.25 },
-    },
+    exit: { opacity: 0, y: 50, scale: 0.96, transition: { duration: 0.2 } },
   };
+
+  const inputClass =
+    "w-full rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500";
 
   return (
     <motion.div
@@ -41,34 +37,28 @@ const EmploymentModal = ({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="bg-[#161b22] rounded-2xl w-full max-w-2xl border border-gray-700 shadow-2xl flex flex-col max-h-[90vh] relative"
+      className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-white/10 bg-[#0f172a] shadow-2xl"
     >
-      {/* Close Icon */}
-      <X
-        className="absolute right-5 top-5 cursor-pointer text-gray-400 hover:text-white"
-        size={24}
+      <button
         onClick={onClose}
-      />
+        className="absolute right-5 top-5 rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+      >
+        <X size={22} />
+      </button>
 
-      {/* Header */}
-      <div className="px-6 sm:px-8 pt-6">
-        <h2 className="text-2xl font-bold text-white mb-2">
-          {editingEmploymentIndex !== null
-            ? "Edit Employment"
-            : "Add Employment"}
+      <div className="px-8 pb-2 pt-8">
+        <h2 className="mb-2 text-2xl font-bold text-white">
+          {editingEmploymentIndex !== null ? "Edit Employment" : "Add Employment"}
         </h2>
-        <p className="text-gray-400 text-sm mb-6">
-          Add your work experience details
+        <p className="text-sm text-slate-400">
+          Add your work experience details in a clear and professional way.
         </p>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="overflow-y-auto px-6 sm:px-8 pb-6 flex-1">
-        <div className="space-y-6 text-gray-300">
-
-          {/* Role */}
+      <div className="flex-1 overflow-y-auto px-8 pb-8 pt-6">
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm mb-2">Role</label>
+            <label className="mb-2 block text-sm text-slate-300">Role</label>
             <input
               type="text"
               value={employmentForm.role}
@@ -78,13 +68,12 @@ const EmploymentModal = ({
                   role: e.target.value,
                 })
               }
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 focus:border-blue-500 outline-none"
+              className={inputClass}
             />
           </div>
 
-          {/* Company */}
           <div>
-            <label className="block text-sm mb-2">Company</label>
+            <label className="mb-2 block text-sm text-slate-300">Company</label>
             <input
               type="text"
               value={employmentForm.company}
@@ -94,12 +83,11 @@ const EmploymentModal = ({
                   company: e.target.value,
                 })
               }
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 focus:border-blue-500 outline-none"
+              className={inputClass}
             />
           </div>
 
-          {/* From Date */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <input
               type="text"
               placeholder="From Month"
@@ -110,7 +98,7 @@ const EmploymentModal = ({
                   fromMonth: e.target.value,
                 })
               }
-              className="bg-gray-800 border border-gray-600 rounded-lg p-3 outline-none"
+              className={inputClass}
             />
             <input
               type="text"
@@ -122,13 +110,12 @@ const EmploymentModal = ({
                   fromYear: e.target.value,
                 })
               }
-              className="bg-gray-800 border border-gray-600 rounded-lg p-3 outline-none"
+              className={inputClass}
             />
           </div>
 
-          {/* To Date */}
           {!employmentForm.currentlyWorking && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <input
                 type="text"
                 placeholder="To Month"
@@ -139,7 +126,7 @@ const EmploymentModal = ({
                     toMonth: e.target.value,
                   })
                 }
-                className="bg-gray-800 border border-gray-600 rounded-lg p-3 outline-none"
+                className={inputClass}
               />
               <input
                 type="text"
@@ -151,13 +138,12 @@ const EmploymentModal = ({
                     toYear: e.target.value,
                   })
                 }
-                className="bg-gray-800 border border-gray-600 rounded-lg p-3 outline-none"
+                className={inputClass}
               />
             </div>
           )}
 
-          {/* Currently Working */}
-          <div className="flex items-center gap-2">
+          <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/3 p-4 text-sm text-slate-300">
             <input
               type="checkbox"
               checked={employmentForm.currentlyWorking}
@@ -167,13 +153,15 @@ const EmploymentModal = ({
                   currentlyWorking: e.target.checked,
                 })
               }
+              className="accent-cyan-500"
             />
-            <span className="text-sm">Currently working here</span>
-          </div>
+            Currently working here
+          </label>
 
-          {/* Description */}
           <div>
-            <label className="block text-sm mb-2">Description</label>
+            <label className="mb-2 block text-sm text-slate-300">
+              Description
+            </label>
             <textarea
               value={employmentForm.description}
               onChange={(e) =>
@@ -182,24 +170,22 @@ const EmploymentModal = ({
                   description: e.target.value,
                 })
               }
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 min-h-30 outline-none"
+              className={`${inputClass} min-h-35`}
             />
           </div>
-
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex justify-end gap-6 px-6 sm:px-8 py-6 border-t border-gray-700">
+      <div className="flex justify-end gap-4 border-t border-white/10 px-8 py-6">
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-200 text-sm"
+          className="px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
         >
           Cancel
         </button>
         <button
           onClick={() => onSave(employmentForm)}
-          className="bg-blue-600 hover:bg-blue-500 px-8 py-3 rounded-lg text-white"
+          className="rounded-2xl bg-cyan-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
         >
           Save
         </button>

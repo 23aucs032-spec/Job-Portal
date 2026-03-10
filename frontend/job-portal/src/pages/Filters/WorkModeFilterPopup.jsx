@@ -4,61 +4,65 @@ import React, { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 
-const CompanyTypeFilterPopup = ({
+const getWorkModeName = (item) =>
+  String(item?.name || item?.workMode || item?._id || "").trim();
+
+const WorkModeFilterPopup = ({
   selected = [],
   setSelected,
   closePopup,
-  companyTypes = [],
+  workModes = [],
 }) => {
   const [search, setSearch] = useState("");
 
   const safeSelected = Array.isArray(selected) ? selected : [];
-  const safeCompanyTypes = Array.isArray(companyTypes) ? companyTypes : [];
+  const safeWorkModes = Array.isArray(workModes) ? workModes : [];
 
-  const toggleOption = (typeName) => {
-    if (safeSelected.includes(typeName)) {
-      setSelected(safeSelected.filter((item) => item !== typeName));
+  const toggleOption = (modeName) => {
+    if (!modeName) return;
+
+    if (safeSelected.includes(modeName)) {
+      setSelected(safeSelected.filter((item) => item !== modeName));
     } else {
-      setSelected([...safeSelected, typeName]);
+      setSelected([...safeSelected, modeName]);
     }
   };
 
   const clearPopupItems = () => {
-    const popupTypeNames = safeCompanyTypes.map((item) => item.name);
+    const popupNames = safeWorkModes.map((item) => getWorkModeName(item));
 
     const remainingSelected = safeSelected.filter(
-      (item) => !popupTypeNames.includes(item)
+      (item) => !popupNames.includes(item)
     );
 
     setSelected(remainingSelected);
   };
 
-  const filteredTypes = useMemo(() => {
-    return safeCompanyTypes.filter((type) =>
-      String(type?.name || "")
-        .toLowerCase()
-        .includes(search.toLowerCase())
+  const filteredWorkModes = useMemo(() => {
+    return safeWorkModes.filter((item) =>
+      getWorkModeName(item).toLowerCase().includes(search.toLowerCase())
     );
-  }, [safeCompanyTypes, search]);
+  }, [safeWorkModes, search]);
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/60" onClick={closePopup} />
+    <div className="fixed inset-0 z-50" onClick={closePopup}>
+      <div className="absolute inset-0 bg-black/60" />
 
       <motion.div
         initial={{ x: -320, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -320, opacity: 0 }}
         transition={{ duration: 0.3 }}
+        onClick={(e) => e.stopPropagation()}
         className="relative h-full w-90 max-w-[90vw] border-r border-slate-700 bg-[#0f172a] p-5 shadow-2xl"
       >
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white">
-              More Company Types
+              More Work Modes
             </h2>
             <p className="text-xs text-slate-400">
-              {safeCompanyTypes.length} Company Types
+              {safeWorkModes.length} Work Modes
             </p>
           </div>
 
@@ -69,7 +73,7 @@ const CompanyTypeFilterPopup = ({
 
         <input
           type="text"
-          placeholder="Search Company Type"
+          placeholder="Search Work Mode"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="mb-4 w-full rounded-md border border-slate-600 bg-[#1e293b] px-3 py-2 text-sm text-white outline-none focus:border-cyan-500"
@@ -82,27 +86,31 @@ const CompanyTypeFilterPopup = ({
         )}
 
         <div className="max-h-[68vh] space-y-2 overflow-y-auto pr-2">
-          {filteredTypes.length === 0 ? (
-            <p className="text-sm text-slate-400">No more company types found</p>
+          {filteredWorkModes.length === 0 ? (
+            <p className="text-sm text-slate-400">No more work modes found</p>
           ) : (
-            filteredTypes.map((type) => (
-              <label
-                key={type.name}
-                className="flex cursor-pointer items-center justify-between rounded-md p-2 text-sm text-white hover:bg-slate-800"
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={safeSelected.includes(type.name)}
-                    onChange={() => toggleOption(type.name)}
-                    className="accent-cyan-500"
-                  />
-                  <span>{type.name}</span>
-                </div>
+            filteredWorkModes.map((item, index) => {
+              const modeName = getWorkModeName(item);
 
-                <span className="text-slate-400">({type.count || 0})</span>
-              </label>
-            ))
+              return (
+                <label
+                  key={item._id || modeName || index}
+                  className="flex cursor-pointer items-center justify-between rounded-md p-2 text-sm text-white hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={safeSelected.includes(modeName)}
+                      onChange={() => toggleOption(modeName)}
+                      className="accent-cyan-500"
+                    />
+                    <span>{modeName}</span>
+                  </div>
+
+                  <span className="text-slate-400">({item.count || 0})</span>
+                </label>
+              );
+            })
           )}
         </div>
 
@@ -126,4 +134,4 @@ const CompanyTypeFilterPopup = ({
   );
 };
 
-export default CompanyTypeFilterPopup;
+export default WorkModeFilterPopup;

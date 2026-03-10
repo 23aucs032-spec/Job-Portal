@@ -1,123 +1,122 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import LocationFilterPopup from "./LocationFilterPopup";
-import fallbackLocations from "./components/locationData";
+
+const API = "http://localhost:5000";
 
 const LocationFilter = ({ filters, setFilters }) => {
   const [locations, setLocations] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  /* ================= FETCH LOCATION COUNT ================= */
+  const selectedLocations = Array.isArray(filters?.location)
+    ? filters.location
+    : [];
+
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:5000/api/jobs/location-count"
-        );
+        setLoading(true);
 
-        if (!res.ok) throw new Error("Failed to fetch location counts");
+        const res = await fetch(`${API}/api/jobs/location-count`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch location counts");
+        }
 
         const data = await res.json();
 
-        // Ensure we have an array
-        const backendLocations = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data)
-          ? data.data
+        // only posted-job locations
+        const validLocations = Array.isArray(data)
+          ? data.filter((item) => item?.name && Number(item.count) > 0)
           : [];
 
-        // Merge with fallback locations
-        const merged = fallbackLocations.map((loc) => {
-          const found = backendLocations.find(
-            (d) =>
-              typeof d.location === "string" &&
-              d.location.trim().toLowerCase() === loc.name?.trim().toLowerCase()
-          );
-
-          return {
-            name: loc.name || "Unknown",
-            count: typeof found?.count === "number" ? found.count : 0,
-          };
-        });
-
-        setLocations(merged);
-      } catch (err) {
-        console.error("Location fetch error:", err);
-
-        // Fallback: all zero counts
-        setLocations(
-          fallbackLocations.map((loc) => ({
-            name: loc.name || "Unknown",
-            count: 0,
-          }))
-        );
+        setLocations(validLocations);
+      } catch (error) {
+        console.error("Location fetch error:", error);
+        setLocations([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchLocations();
   }, []);
 
-  /* ================= TOGGLE LOCATION ================= */
-  const toggleLocation = (name) => {
-    if (!name) return;
-    const updated = filters.location.includes(name)
-      ? filters.location.filter((loc) => loc !== name)
-      : [...filters.location, name];
+  const topLocations = useMemo(() => locations.slice(0, 4), [locations]);
+  const remainingLocations = useMemo(() => locations.slice(4), [locations]);
 
-    setFilters({
-      ...filters,
-      location: updated,
+  const toggleLocation = (locationName) => {
+    setFilters((prev) => {
+      const prevLocations = Array.isArray(prev.location) ? prev.location : [];
+
+      const updated = prevLocations.includes(locationName)
+        ? prevLocations.filter((loc) => loc !== locationName)
+        : [...prevLocations, locationName];
+
+      return {
+        ...prev,
+        location: updated,
+      };
     });
   };
 
-  const topLocations = locations.slice(0, 4);
-
   return (
-    <div>
-      <div className="flex justify-between items-center mb-3">
+    <div className="mb-6">
+      <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-white">Location</h3>
 
-        {filters.location?.length > 0 && (
-          <span className="text-xs bg-blue-600 px-2 py-1 rounded-full">
-            {filters.location.length}
+        {selectedLocations.length > 0 && (
+          <span className="rounded-full bg-cyan-600 px-2 py-1 text-xs text-white">
+            {selectedLocations.length}
           </span>
         )}
       </div>
 
-      {topLocations.map((loc) => (
-        <label
-          key={loc.name}
-          className="flex justify-between items-center text-sm text-gray-300 mb-2 cursor-pointer"
+      {loading ? (
+        <p className="text-sm text-slate-400">Loading...</p>
+      ) : topLocations.length === 0 ? (
+        <p className="text-sm text-slate-500">No locations found</p>
+      ) : (
+        <div className="space-y-2">
+          {topLocations.map((loc) => (
+            <label
+              key={loc.name}
+              className="flex cursor-pointer items-center justify-between text-sm text-slate-300"
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedLocations.includes(loc.name)}
+                  onChange={() => toggleLocation(loc.name)}
+                  className="accent-cyan-500"
+                />
+                <span>{loc.name}</span>
+              </div>
+
+              <span className="text-xs text-slate-400">({loc.count || 0})</span>
+            </label>
+          ))}
+        </div>
+      )}
+
+      {remainingLocations.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowPopup(true)}
+          className="mt-3 text-sm font-medium text-cyan-400 hover:text-cyan-300"
         >
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={filters.location.includes(loc.name)}
-              onChange={() => toggleLocation(loc.name)}
-              className="accent-blue-500"
-            />
-            {loc.name || "Unknown"}
-          </div>
-
-          <span className="text-xs text-gray-400">({loc.count || 0})</span>
-        </label>
-      ))}
-
-      <button
-        onClick={() => setShowPopup(true)}
-        className="text-blue-400 text-sm mt-2 hover:underline"
-      >
-        View All Locations
-      </button>
+          View More
+        </button>
+      )}
 
       {showPopup && (
         <LocationFilterPopup
-          locations={locations}
-          selected={filters.location}
+          locations={remainingLocations}
+          selected={selectedLocations}
           setSelected={(updated) =>
-            setFilters({
-              ...filters,
+            setFilters((prev) => ({
+              ...prev,
               location: updated,
-            })
+            }))
           }
           closePopup={() => setShowPopup(false)}
         />

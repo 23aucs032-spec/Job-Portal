@@ -1,10 +1,22 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  FileText,
+  Briefcase,
+  ArrowLeft,
+} from "lucide-react";
+
+const API = "http://localhost:5000";
 
 const ApplicationViewer = () => {
-
   const { jobId } = useParams();
   const navigate = useNavigate();
 
@@ -12,271 +24,208 @@ const ApplicationViewer = () => {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /* ================= FETCH DATA ================= */
 
-  useEffect(() => {
-
-    const fetchApplicants = async () => {
-
+  const fetchApplicants = async () => {
+    try {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        navigate("/login");
+        navigate("/recruiter/login");
         return;
       }
 
-      try {
+      /* FETCH JOB DETAILS */
 
-        // Fetch Job Details
+      const jobRes = await fetch(`${API}/api/jobs/${jobId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        const jobRes = await fetch(
-          `http://localhost:5000/api/jobs/${jobId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      if (!jobRes.ok) throw new Error("Failed to fetch job");
 
-        const jobData = await jobRes.json();
+      const jobData = await jobRes.json();
+      setJob(jobData);
 
-        setJob(jobData);
+      /* FETCH APPLICANTS */
 
+      const res = await fetch(
+        `${API}/api/applications/job/${jobId}/applicants`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
+      if (!res.ok) throw new Error("Failed to fetch applicants");
 
-        // Fetch Applicants
+      const data = await res.json();
 
-        const res = await fetch(
-          `http://localhost:5000/api/jobs/${jobId}/applicants`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await res.json();
-
-        setApplicants(data);
-
-
-      } catch (error) {
-
-        console.error(error);
-
-      } finally {
-
-        setLoading(false);
-
+      if (Array.isArray(data)) {
+        const mapped = data.map((app) => app.applicant || {});
+        setApplicants(mapped);
+      } else {
+        setApplicants([]);
       }
+    } catch (err) {
+      console.error("Applicants fetch error:", err);
+      setApplicants([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    };
-
+  useEffect(() => {
     fetchApplicants();
+  }, [jobId]);
 
-  }, [jobId, navigate]);
-
-
+  /* ================= LOADING ================= */
 
   if (loading)
     return (
-
-      <div className="min-h-screen flex justify-center items-center bg-slate-950">
-
-        <motion.h2
-
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-
-          className="text-cyan-400 text-xl font-semibold"
+          className="px-8 py-6 text-lg font-semibold border shadow-xl rounded-2xl bg-black/50 backdrop-blur-xl border-slate-700 text-cyan-400"
         >
-
           Loading Applicants...
-
-        </motion.h2>
-
+        </motion.div>
       </div>
-
     );
 
-
+  /* ================= UI ================= */
 
   return (
+    <div className="min-h-screen px-6 py-10 text-white bg-slate-950">
+      <div className="max-w-6xl mx-auto">
+        {/* HEADER */}
 
-    <div className="min-h-screen bg-slate-950 text-white p-10">
+        <div className="flex flex-col gap-4 mb-10 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Manage Applications</h1>
 
+            {job && (
+              <p className="mt-2 text-cyan-400">
+                Job: {job.title || "Untitled Job"}
+              </p>
+            )}
+          </div>
 
-      {/* Header */}
+          <button
+            onClick={() => navigate("/recruiter/dashboard")}
+            className="flex items-center gap-2 px-5 py-3 font-semibold transition bg-blue-600 rounded-xl hover:bg-blue-700"
+          >
+            <ArrowLeft size={18} />
+            Recruiter Dashboard
+          </button>
+        </div>
 
-      <div className="flex justify-between items-center mb-10">
+        {/* STATS */}
 
-        <h1 className="text-3xl font-bold">
-          Manage Applications
-        </h1>
+        <div className="grid grid-cols-1 gap-4 mb-10 md:grid-cols-3">
+          <StatCard title="Total Applicants" value={applicants.length} />
+          <StatCard title="Job Title" value={job?.title || "-"} />
+          <StatCard title="Company" value={job?.companyName || "-"} />
+        </div>
 
-
-        <motion.button
-
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-
-          onClick={() => navigate("/recruiter/dashboard")}
-
-          className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg font-semibold"
-        >
-
-          Recruiter Dashboard
-
-        </motion.button>
-
-      </div>
-
-
-
-      {/* Job Title */}
-
-      {job && (
-
-        <motion.h2
-
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-
-          className="text-xl text-cyan-400 mb-8"
-        >
-
-          Job: {job.title}
-
-        </motion.h2>
-
-      )}
-
-
-
-      {/* Applicants List */}
-
-      <div className="max-w-4xl space-y-6">
-
+        {/* APPLICANTS */}
 
         {applicants.length === 0 ? (
-
-          <p className="text-gray-400">
-            No applicants yet
-          </p>
-
+          <div className="p-10 text-center border shadow-xl rounded-3xl bg-black/50 backdrop-blur-xl border-slate-800">
+            <h2 className="text-2xl font-bold">No Applicants Yet</h2>
+            <p className="mt-2 text-gray-400">
+              Once candidates apply, they will appear here.
+            </p>
+          </div>
         ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            {applicants.map((applicant) => (
+              <motion.div
+                key={applicant._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.02 }}
+                className="p-6 border shadow-xl rounded-3xl bg-black/50 backdrop-blur-xl border-slate-800"
+              >
+                {/* NAME */}
 
-          applicants.map((applicant, index) => (
+                <div className="flex items-center gap-3 mb-3">
+                  <User className="text-cyan-400" />
+                  <h2 className="text-xl font-semibold">
+                    {applicant.fullName || "No Name"}
+                  </h2>
+                </div>
 
-            <motion.div
+                {/* EMAIL */}
 
-              key={applicant._id}
+                <div className="flex items-center gap-2 text-gray-300">
+                  <Mail size={16} />
+                  {applicant.email || "No Email"}
+                </div>
 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
+                {/* MOBILE */}
 
-              transition={{ delay: index * 0.1 }}
+                <div className="flex items-center gap-2 mt-2 text-gray-300">
+                  <Phone size={16} />
+                  {applicant.mobile || "N/A"}
+                </div>
 
-              whileHover={{
-                scale: 1.02
-              }}
+                {/* CITY */}
 
-              className="bg-slate-900 border border-slate-700 p-6 rounded-xl hover:border-cyan-400 transition-all duration-300"
-            >
+                <div className="flex items-center gap-2 mt-2 text-gray-300">
+                  <MapPin size={16} />
+                  {applicant.city || "N/A"}
+                </div>
 
+                {/* SKILLS */}
 
-              {/* Name */}
+                {applicant.skills && applicant.skills.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-sm font-semibold text-cyan-400">
+                      Skills
+                    </p>
 
-              <h2 className="text-xl font-semibold">
+                    <div className="flex flex-wrap gap-2">
+                      {applicant.skills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 text-sm text-black rounded-full bg-cyan-400"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                {applicant.fullName}
+                {/* RESUME */}
 
-              </h2>
-
-
-
-              {/* Email */}
-
-              <p className="text-gray-400 mb-3">
-
-                {applicant.email}
-
-              </p>
-
-
-
-              {/* Mobile */}
-
-              <p className="text-sm">
-
-                <span className="font-semibold">
-                  Mobile:
-                </span>
-
-                <span className="text-gray-300 ml-2">
-
-                  {applicant.mobile}
-
-                </span>
-
-              </p>
-
-
-
-              {/* City */}
-
-              <p className="text-sm mb-4">
-
-                <span className="font-semibold">
-                  City:
-                </span>
-
-                <span className="text-gray-300 ml-2">
-
-                  {applicant.city}
-
-                </span>
-
-              </p>
-
-
-
-              {/* Resume Button */}
-
-              {applicant.resume && (
-
-                <motion.a
-
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-
-                  href={`http://localhost:5000/${applicant.resume}`}
-
-                  target="_blank"
-
-                  rel="noreferrer"
-
-                  className="inline-block bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md font-semibold"
-                >
-
-                  View Resume
-
-                </motion.a>
-
-              )}
-
-            </motion.div>
-
-          ))
-
+                {applicant.resume && (
+                  <a
+                    href={`${API}/${applicant.resume}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 mt-5 font-semibold transition bg-blue-600 rounded-lg hover:bg-blue-700 w-fit"
+                  >
+                    <FileText size={16} />
+                    View Resume
+                  </a>
+                )}
+              </motion.div>
+            ))}
+          </div>
         )}
-
       </div>
-
     </div>
-
   );
-
 };
 
+/* ================= COMPONENTS ================= */
+
+const StatCard = ({ title, value }) => {
+  return (
+    <div className="p-6 border shadow-lg rounded-2xl bg-black/40 backdrop-blur-xl border-slate-800">
+      <p className="text-sm text-gray-400">{title}</p>
+      <h3 className="mt-2 text-xl font-bold">{value}</h3>
+    </div>
+  );
+};
 
 export default ApplicationViewer;

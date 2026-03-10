@@ -1,153 +1,145 @@
-import React, { useState } from "react";
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useMemo, useState } from "react";
 import { X } from "lucide-react";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
-const IndustryFilterPopup = ({
-  selected = [],
-  setSelected,
-  closePopup,
-  industries,
-}) => {
+const getIndustryName = (industry) =>
+  String(industry?.name || industry?.industry || industry?._id || "").trim();
+
+const IndustryFilterPopup = (props) => {
+  const {
+    selected = [],
+    setSelected,
+    closePopup,
+    industries = [],
+  } = props || {};
 
   const [search, setSearch] = useState("");
 
-  const toggleOption = (industry) => {
+  const safeSelected = Array.isArray(selected) ? selected : [];
+  const safeIndustries = Array.isArray(industries) ? industries : [];
 
-    if (selected.includes(industry)) {
+  const toggleOption = (industryName) => {
+    if (!industryName || typeof setSelected !== "function") return;
 
-      setSelected(
-        selected.filter((item) => item !== industry)
-      );
-
+    if (safeSelected.includes(industryName)) {
+      setSelected(safeSelected.filter((item) => item !== industryName));
     } else {
-
-      setSelected([...selected, industry]);
-
+      setSelected([...safeSelected, industryName]);
     }
-
   };
 
-  const clearAll = () => {
+  const clearPopupItems = () => {
+    if (typeof setSelected !== "function") return;
 
-    setSelected([]);
+    const popupIndustryNames = safeIndustries.map((industry) =>
+      getIndustryName(industry)
+    );
 
+    const remainingSelected = safeSelected.filter(
+      (item) => !popupIndustryNames.includes(item)
+    );
+
+    setSelected(remainingSelected);
   };
 
-  const filtered = industries.filter((industry) =>
-    industry.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredIndustries = useMemo(() => {
+    return safeIndustries.filter((industry) =>
+      getIndustryName(industry).toLowerCase().includes(search.toLowerCase())
+    );
+  }, [safeIndustries, search]);
 
   return (
-
-    <div className="fixed inset-0 z-50 flex">
-
-      {/* OVERLAY */}
-
-      <div
-        className="fixed inset-0 bg-black/60"
-        onClick={closePopup}
-      ></div>
-
-      {/* POPUP */}
+    <div className="fixed inset-0 z-50" onClick={closePopup}>
+      <div className="absolute inset-0 bg-black/60" />
 
       <motion.div
-        initial={{ x: "-100%" }}
-        animate={{ x: 0 }}
+        initial={{ x: -320, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: -320, opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="relative w-96 h-full bg-[#0f172a] shadow-xl p-5 border-r border-gray-700"
+        onClick={(e) => e.stopPropagation()}
+        className="relative h-full w-90 max-w-[90vw] border-r border-slate-700 bg-[#0f172a] p-5 shadow-2xl"
       >
-
-        {/* HEADER */}
-
-        <div className="flex justify-between items-center mb-4">
-
-          <h2 className="text-lg font-semibold text-white">
-            Industry
-          </h2>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-white">
+              More Industries
+            </h2>
+            <p className="text-xs text-slate-400">
+              {safeIndustries.length} Industries
+            </p>
+          </div>
 
           <button onClick={closePopup}>
-
-            <X className="text-gray-400 hover:text-white" size={20} />
-
+            <X className="text-slate-400 hover:text-white" size={20} />
           </button>
-
         </div>
-
-
-        {/* SEARCH */}
 
         <input
           type="text"
           placeholder="Search Industry"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full mb-4 px-3 py-2 rounded-md bg-[#1e293b] text-white border border-gray-600"
+          className="mb-4 w-full rounded-md border border-slate-600 bg-[#1e293b] px-3 py-2 text-sm text-white outline-none focus:border-cyan-500"
         />
 
+        {safeSelected.length > 0 && (
+          <p className="mb-3 text-xs text-cyan-400">
+            {safeSelected.length} Selected
+          </p>
+        )}
 
-        {/* LIST */}
+        <div className="max-h-[68vh] space-y-2 overflow-y-auto pr-2">
+          {filteredIndustries.length === 0 ? (
+            <p className="text-sm text-slate-400">No more industries found</p>
+          ) : (
+            filteredIndustries.map((industry, index) => {
+              const industryName = getIndustryName(industry);
 
-        <div className="flex-1 max-h-[65vh] overflow-y-auto space-y-2 pr-2">
+              return (
+                <label
+                  key={industry._id || industryName || index}
+                  className="flex cursor-pointer items-center justify-between rounded-md p-2 text-sm text-white hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={safeSelected.includes(industryName)}
+                      onChange={() => toggleOption(industryName)}
+                      className="accent-cyan-500"
+                    />
+                    <span>{industryName}</span>
+                  </div>
 
-          {filtered.map((industry) => (
-
-            <label
-              key={industry.name}
-              className="flex justify-between items-center text-sm text-white cursor-pointer"
-            >
-
-              <div className="flex items-center gap-2">
-
-                <input
-                  type="checkbox"
-                  checked={selected.includes(industry.name)}
-                  onChange={() => toggleOption(industry.name)}
-                />
-
-                {industry.name}
-
-              </div>
-
-              <span className="text-gray-400">
-
-                ({industry.count})
-
-              </span>
-
-            </label>
-
-          ))}
-
+                  <span className="text-slate-400">
+                    ({industry.count || 0})
+                  </span>
+                </label>
+              );
+            })
+          )}
         </div>
 
-
-        {/* FOOTER */}
-
-        <div className="absolute bottom-5 left-5 right-5 flex justify-between">
-
+        <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between">
           <button
-            onClick={clearAll}
-            className="text-red-400 text-sm"
+            onClick={clearPopupItems}
+            className="text-sm text-red-400 hover:text-red-300"
           >
-            Clear All
+            Clear Popup Items
           </button>
 
           <button
             onClick={closePopup}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm"
+            className="rounded-md bg-cyan-600 px-4 py-1.5 text-sm text-white hover:bg-cyan-700"
           >
             Apply
           </button>
-
         </div>
-
       </motion.div>
-
     </div>
-
   );
-
 };
 
 export default IndustryFilterPopup;

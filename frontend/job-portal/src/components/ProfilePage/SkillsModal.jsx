@@ -1,7 +1,7 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Plus } from "lucide-react";
 
 const SkillsModal = ({
   modals,
@@ -16,10 +16,8 @@ const SkillsModal = ({
 
   const handleAddSkill = () => {
     const trimmed = inputSkill.trim();
-
     if (!trimmed) return;
 
-    // Prevent duplicates (case insensitive)
     const exists = skills.some(
       (skill) => skill.toLowerCase() === trimmed.toLowerCase()
     );
@@ -40,104 +38,99 @@ const SkillsModal = ({
   };
 
   return (
-    <motion.div
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
+    <AnimatePresence>
       <motion.div
-        variants={modalVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-        className="bg-[#161b22] rounded-2xl w-full max-w-lg p-8 border border-gray-700 relative shadow-2xl"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
-        {/* Close */}
-        <X
-          className="absolute right-5 top-5 cursor-pointer text-gray-400 hover:text-white"
-          size={22}
-          onClick={() => closeModal("skills")}
-        />
-
-        <h2 className="text-2xl font-bold text-white mb-2">
-          Key skills
-        </h2>
-
-        <p className="text-gray-400 text-sm mb-6">
-          Recruiters look for candidates with specific key skills. Add them here to appear in searches.
-        </p>
-
-        {/* Add Skill Input */}
-        <div className="flex gap-3 mb-8">
-          <input
-            type="text"
-            value={inputSkill}
-            onChange={(e) => setInputSkill(e.target.value)}
-            placeholder="e.g. React.js, Python, Communication..."
-            className="flex-1 bg-[#0d1117] border-b-2 border-blue-600 focus:border-blue-500 rounded-none p-3 text-gray-200 placeholder-gray-500 outline-none"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleAddSkill();
-              }
-            }}
-          />
-
+        <motion.div
+          variants={modalVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-[#0f172a] p-8 shadow-2xl"
+        >
           <button
-            onClick={handleAddSkill}
-            className="bg-blue-600 hover:bg-blue-500 px-6 rounded-lg text-white font-medium transition"
+            onClick={() => closeModal("skills")}
+            className="absolute right-5 top-5 rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
           >
-            Add
+            <X size={22} />
           </button>
-        </div>
 
-        {/* Added Skills */}
-        <div>
-          <p className="text-sm text-gray-400 mb-3">
-            Added skills
+          <h2 className="mb-2 text-2xl font-bold text-white">Key Skills</h2>
+          <p className="mb-6 text-sm text-slate-400">
+            Add skills that recruiters search for to improve your profile
+            visibility.
           </p>
 
-          <div className="flex flex-wrap gap-2.5 min-h-15">
-            {skills.map((skill) => (
-              <span
-                key={skill}
-                className="bg-gray-700 text-gray-200 px-4 py-2 rounded-full text-sm flex items-center gap-2 border border-gray-600"
-              >
-                {skill}
-                <X
-                  size={14}
-                  className="cursor-pointer hover:text-red-400 transition"
-                  onClick={() => handleRemoveSkill(skill)}
-                />
-              </span>
-            ))}
+          <div className="mb-8 flex gap-3">
+            <input
+              type="text"
+              value={inputSkill}
+              onChange={(e) => setInputSkill(e.target.value)}
+              placeholder="e.g. React.js, Python, Communication..."
+              className="flex-1 rounded-2xl border border-white/10 bg-white/3 p-3 text-slate-200 outline-none placeholder:text-slate-500 focus:border-cyan-500"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleAddSkill();
+                }
+              }}
+            />
 
-            {skills.length === 0 && (
-              <p className="text-gray-500 text-sm mt-6">
-                No skills added yet
-              </p>
-            )}
+            <button
+              onClick={handleAddSkill}
+              className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
+            >
+              <Plus size={16} />
+              Add
+            </button>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex justify-end items-center gap-6 mt-10 pt-6 border-t border-gray-700">
-          <button
-            className="text-gray-400 hover:text-gray-200 text-sm font-medium"
-            onClick={() => closeModal("skills")}
-          >
-            Cancel
-          </button>
+          <div>
+            <p className="mb-3 text-sm text-slate-400">Added skills</p>
 
-          <button
-            className="bg-blue-600 hover:bg-blue-500 px-10 py-3 rounded-lg font-medium text-white shadow-md transition"
-            onClick={handleSave}
-          >
-            Save
-          </button>
-        </div>
+            <div className="flex min-h-17.5 flex-wrap gap-3 rounded-2xl border border-white/10 bg-white/3 p-4">
+              {skills.length > 0 ? (
+                skills.map((skill) => (
+                  <span
+                    key={skill}
+                    className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-300"
+                  >
+                    {skill}
+                    <button
+                      onClick={() => handleRemoveSkill(skill)}
+                      className="hover:text-red-400"
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No skills added yet</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-10 flex items-center justify-end gap-4 border-t border-white/10 pt-6">
+            <button
+              className="px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
+              onClick={() => closeModal("skills")}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="rounded-2xl bg-cyan-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
+              onClick={handleSave}
+            >
+              Save
+            </button>
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </AnimatePresence>
   );
 };
 

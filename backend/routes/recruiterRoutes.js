@@ -1,15 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
 
 const recruiterController = require("../controllers/recruiterController");
+const authMiddleware = require("../middleware/authMiddleware");
+const uploadLogo = require("../middleware/uploadLogo");
 
 router.post("/register", recruiterController.registerRecruiter);
-
 router.post("/login", recruiterController.loginRecruiter);
-
-// Protected routes
 router.get("/profile", authMiddleware, recruiterController.getProfile);
-router.put("/profile", authMiddleware, recruiterController.updateProfile);
+router.put(
+  "/profile",
+  authMiddleware,
+  uploadLogo.single("logo"),
+  recruiterController.updateProfile
+);
 
 module.exports = router;

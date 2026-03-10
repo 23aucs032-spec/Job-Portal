@@ -2,235 +2,266 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bookmark, Trash2, Eye } from "lucide-react";
+import { Bookmark, Trash2, Eye, ArrowLeft } from "lucide-react";
+
+const API = "http://localhost:5000";
 
 const SavedJobs = () => {
-
   const navigate = useNavigate();
 
   const [savedJobs, setSavedJobs] = useState([]);
-
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   /* ================= LOAD SAVED JOBS ================= */
+  useEffect(() => {
+    const fetchSavedJobs = async () => {
+      try {
+        setLoading(true);
+        setErrorMessage("");
 
- useEffect(() => {
+        const token = localStorage.getItem("token");
 
-  const fetchSavedJobs = async () => {
-
-    try {
-
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(
-        "http://localhost:5000/api/saved-jobs",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        if (!token) {
+          navigate("/login");
+          return;
         }
-      );
 
-      const data = await res.json();
+        const res = await fetch(`${API}/api/saved-jobs`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      const jobs = data.map((item) => item.job);
+        const contentType = res.headers.get("content-type") || "";
 
-      setSavedJobs(jobs);
+        if (!contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(`Invalid response from server: ${text.slice(0, 120)}`);
+        }
 
-    } catch (error) {
+        const data = await res.json();
 
-      console.log(error);
+        if (!res.ok) {
+          throw new Error(data?.message || "Failed to fetch saved jobs");
+        }
 
-    }
+        const jobs = Array.isArray(data)
+          ? data
+              .map((item) => item?.job || item?.jobId || null)
+              .filter((job) => job && job._id)
+          : [];
 
-  };
+        setSavedJobs(jobs);
+      } catch (error) {
+        console.log(error);
+        setErrorMessage(error.message || "Unable to load saved jobs");
+        setSavedJobs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchSavedJobs();
-
-}, []);
-
+    fetchSavedJobs();
+  }, [navigate]);
 
   /* ================= REMOVE JOB ================= */
-
   const removeJob = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
 
-  try {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
-    const token = localStorage.getItem("token");
-
-    await fetch(
-      `http://localhost:5000/api/saved-jobs/${id}`,
-      {
+      const res = await fetch(`${API}/api/saved-jobs/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
       }
-    );
 
-    setSavedJobs(savedJobs.filter((job) => job._id !== id));
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to remove saved job");
+      }
 
-  } catch (error) {
+      setSavedJobs((prev) => prev.filter((job) => job?._id !== id));
+    } catch (error) {
+      console.log(error);
+      alert(error.message || "Unable to remove saved job");
+    }
+  };
 
-    console.log(error);
+  /* ================= HELPERS ================= */
+  const getLogo = (logo) => {
+    if (!logo) {
+      return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+    }
 
-  }
+    if (logo.startsWith("http")) return logo;
 
-};
-
+    return `${API}/${logo}`.replace(/([^:]\/)\/+/g, "$1");
+  };
 
   /* ================= ANIMATION VARIANTS ================= */
-
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.12
-      }
-    }
+        staggerChildren: 0.12,
+      },
+    },
   };
 
   const card = {
     hidden: { opacity: 0, y: 40 },
-    show: { opacity: 1, y: 0 }
+    show: { opacity: 1, y: 0 },
   };
 
-
   return (
-
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen p-10 text-white bg-black"
+      className="min-h-screen p-6 text-white bg-black md:p-10"
     >
+      <div className="max-w-5xl mx-auto">
+        {/* TOP BAR */}
+        <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+          <motion.h2
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="flex items-center gap-2 text-3xl font-semibold text-center md:text-left"
+          >
+            <Bookmark size={28} />
+            Saved Jobs
+          </motion.h2>
 
-      {/* PAGE TITLE */}
+          <button
+            onClick={() => navigate("/jobseeker/dashboard")}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm transition border rounded-xl border-white/15 bg-white/10 hover:bg-white/20"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </button>
+        </div>
 
-      <motion.h2
-        initial={{ y: -40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="flex items-center justify-center gap-2 mb-8 text-3xl font-semibold text-center"
-      >
-        <Bookmark size={28} />
-        Saved Jobs
-      </motion.h2>
+        {/* LOADING */}
+        {loading && (
+          <div className="py-20 text-center">
+            <div className="inline-block px-6 py-4 border rounded-2xl border-white/10 bg-white/5">
+              Loading saved jobs...
+            </div>
+          </div>
+        )}
 
+        {/* ERROR */}
+        {!loading && errorMessage && (
+          <div className="p-4 mb-6 border rounded-2xl border-red-500/20 bg-red-500/10 text-red-200">
+            {errorMessage}
+          </div>
+        )}
 
-      {/* EMPTY STATE */}
+        {/* EMPTY STATE */}
+        {!loading && !errorMessage && savedJobs.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-20 text-center"
+          >
+            <p className="text-lg text-gray-400">No saved jobs yet</p>
 
-      {savedJobs.length === 0 && (
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-lg text-center text-gray-400"
-        >
-          No saved jobs yet
-        </motion.p>
-
-      )}
-
-
-      {/* JOB LIST */}
-
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="flex flex-col max-w-4xl gap-6 mx-auto"
-      >
-
-        <AnimatePresence>
-
-          {savedJobs.map((job) => (
-
-            <motion.div
-              key={job._id}
-              variants={card}
-              whileHover={{
-                scale: 1.02,
-                borderColor: "#3b82f6"
-              }}
-              exit={{ opacity: 0, y: 20 }}
-              className="p-6 border border-gray-700 rounded-xl bg-[#111] shadow-lg transition"
+            <button
+              onClick={() => navigate("/jobseeker/dashboard")}
+              className="px-5 py-2 mt-6 font-medium text-black transition rounded-xl bg-cyan-400 hover:bg-cyan-300"
             >
+              Browse Jobs
+            </button>
+          </motion.div>
+        )}
 
-              <div className="flex items-center justify-between">
-
-                {/* LEFT SIDE */}
-
-                <div>
-
-                  <h3 className="text-lg font-semibold text-blue-400">
-                    {job.title}
-                  </h3>
-
-                  <p className="text-gray-300">
-                    {job.companyName}
-                  </p>
-
-                  <p className="text-sm text-gray-400">
-                    📍 {job.location}
-                  </p>
-
-                </div>
-
-
-                {/* COMPANY LOGO */}
-
-                <img
-                  src={
-                    job.companyLogo ||
-                    "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                  }
-                  className="p-1 bg-white rounded-lg w-14 h-14"
-                  alt="logo"
-                />
-
-              </div>
-
-
-              {/* ACTION BUTTONS */}
-
-              <div className="flex gap-4 mt-5">
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() =>
-                    navigate(`/find-job/${job._id}`)
-                  }
-                  className="flex items-center gap-2 px-4 py-1 bg-blue-600 rounded"
+        {/* JOB LIST */}
+        {!loading && !errorMessage && savedJobs.length > 0 && (
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="flex flex-col gap-6"
+          >
+            <AnimatePresence>
+              {savedJobs.map((job) => (
+                <motion.div
+                  key={job._id}
+                  variants={card}
+                  whileHover={{
+                    scale: 1.02,
+                    borderColor: "#3b82f6",
+                  }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="p-6 border border-gray-700 rounded-xl bg-[#111] shadow-lg transition"
                 >
-                  <Eye size={16}/>
-                  View
-                </motion.button>
+                  <div className="flex items-center justify-between gap-4">
+                    {/* LEFT SIDE */}
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-blue-400">
+                        {job.title || "Untitled Job"}
+                      </h3>
 
+                      <p className="text-gray-300">
+                        {job.companyName || job.consultancyName || "Company"}
+                      </p>
 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => removeJob(job._id)}
-                  className="flex items-center gap-2 px-4 py-1 bg-red-600 rounded"
-                >
-                  <Trash2 size={16}/>
-                  Remove
-                </motion.button>
+                      <p className="text-sm text-gray-400">
+                        📍 {job.location || "Location not specified"}
+                      </p>
+                    </div>
 
-              </div>
+                    {/* COMPANY LOGO */}
+                    <img
+                      src={getLogo(job.companyLogo)}
+                      className="object-contain p-1 bg-white rounded-lg w-14 h-14"
+                      alt="logo"
+                    />
+                  </div>
 
-            </motion.div>
+                  {/* ACTION BUTTONS */}
+                  <div className="flex gap-4 mt-5">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => navigate(`/find-job/${job._id}`)}
+                      className="flex items-center gap-2 px-4 py-1 bg-blue-600 rounded"
+                    >
+                      <Eye size={16} />
+                      View
+                    </motion.button>
 
-          ))}
-
-        </AnimatePresence>
-
-      </motion.div>
-
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => removeJob(job._id)}
+                      className="flex items-center gap-2 px-4 py-1 bg-red-600 rounded"
+                    >
+                      <Trash2 size={16} />
+                      Remove
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </div>
     </motion.div>
-
   );
-
 };
 
 export default SavedJobs;

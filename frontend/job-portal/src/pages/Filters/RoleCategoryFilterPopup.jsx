@@ -1,60 +1,74 @@
-import React, { useState } from "react";
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useMemo, useState } from "react";
 import { X } from "lucide-react";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
+const getRoleName = (role) =>
+  String(role?.name || role?.roleCategory || role?._id || "").trim();
+
 const RoleCategoryFilterPopup = ({
-  selected,
+  selected = [],
   setSelected,
   closePopup,
-  roleCategories,
+  roleCategories = [],
 }) => {
   const [search, setSearch] = useState("");
 
-const toggleOption = (roleName) => {
-  if (!roleName) return;
+  const safeSelected = Array.isArray(selected) ? selected : [];
+  const safeRoleCategories = Array.isArray(roleCategories) ? roleCategories : [];
 
-  if (selected.includes(roleName)) {
-    setSelected(selected.filter((item) => item !== roleName));
-  } else {
-    setSelected([...selected, roleName]);
-  }
-};
+  const toggleOption = (roleName) => {
+    if (!roleName) return;
 
-  const clearAll = () => {
-    setSelected([]);
+    if (safeSelected.includes(roleName)) {
+      setSelected(safeSelected.filter((item) => item !== roleName));
+    } else {
+      setSelected([...safeSelected, roleName]);
+    }
   };
 
-const filteredRoles = (roleCategories || []).filter((role) => {
-  const roleName =
-    role?.name || role?.roleCategory || role?._id || "";
+  const clearPopupItems = () => {
+    const popupRoleNames = safeRoleCategories.map((role) => getRoleName(role));
 
-  return roleName.toLowerCase().includes(search.toLowerCase());
-});
+    const remainingSelected = safeSelected.filter(
+      (item) => !popupRoleNames.includes(item)
+    );
+
+    setSelected(remainingSelected);
+  };
+
+  const filteredRoles = useMemo(() => {
+    return safeRoleCategories.filter((role) =>
+      getRoleName(role).toLowerCase().includes(search.toLowerCase())
+    );
+  }, [safeRoleCategories, search]);
 
   return (
-    <div className="fixed inset-0 z-50 flex">
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black/60"
-        onClick={closePopup}
-      ></div>
+    <div className="fixed inset-0 z-50" onClick={closePopup}>
+      <div className="absolute inset-0 bg-black/60" />
 
-      {/* Left Drawer */}
       <motion.div
-        initial={{ x: "-100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "-100%" }}
+        initial={{ x: -320, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: -320, opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="relative w-87.5 h-full bg-[#0f172a] shadow-xl p-5 border-r border-gray-700"
+        onClick={(e) => e.stopPropagation()}
+        className="relative h-full w-90 max-w-[90vw] border-r border-slate-700 bg-[#0f172a] p-5 shadow-2xl"
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-white">
-            Role Category
-          </h2>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-white">
+              More Role Categories
+            </h2>
+            <p className="text-xs text-slate-400">
+              {safeRoleCategories.length} Role Categories
+            </p>
+          </div>
+
           <button onClick={closePopup}>
-            <X className="text-gray-400 hover:text-white" size={20} />
+            <X className="text-slate-400 hover:text-white" size={20} />
           </button>
         </div>
 
@@ -64,49 +78,58 @@ const filteredRoles = (roleCategories || []).filter((role) => {
           placeholder="Search Role Category"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full mb-4 px-3 py-2 rounded-md bg-[#1e293b] text-white border border-gray-600 focus:outline-none"
+          className="mb-4 w-full rounded-md border border-slate-600 bg-[#1e293b] px-3 py-2 text-sm text-white outline-none focus:border-cyan-500"
         />
 
-        {/* Scrollable List */}
-        <div className="flex-1 max-h-[65vh] overflow-y-auto space-y-2 pr-2">
-          {filteredRoles.map((role, index) => {
-  const roleName =
-    role?.name || role?.roleCategory || role?._id || "";
+        {/* Selected Count */}
+        {safeSelected.length > 0 && (
+          <p className="mb-3 text-xs text-cyan-400">
+            {safeSelected.length} Selected
+          </p>
+        )}
 
-  return (
-    <label
-      key={role._id || roleName || index}
-      className="flex justify-between items-center cursor-pointer text-sm text-white"
-    >
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={selected.includes(roleName)}
-          onChange={() => toggleOption(roleName)}
-        />
-        {roleName}
-      </div>
+        {/* List */}
+        <div className="max-h-[68vh] space-y-2 overflow-y-auto pr-2">
+          {filteredRoles.length === 0 ? (
+            <p className="text-sm text-slate-400">No more role categories found</p>
+          ) : (
+            filteredRoles.map((role, index) => {
+              const roleName = getRoleName(role);
 
-      <span className="text-gray-400">
-        ({role.count || 0})
-      </span>
-    </label>
-  );
-})}
+              return (
+                <label
+                  key={role._id || roleName || index}
+                  className="flex cursor-pointer items-center justify-between rounded-md p-2 text-sm text-white hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={safeSelected.includes(roleName)}
+                      onChange={() => toggleOption(roleName)}
+                      className="accent-cyan-500"
+                    />
+                    <span>{roleName}</span>
+                  </div>
+
+                  <span className="text-slate-400">({role.count || 0})</span>
+                </label>
+              );
+            })
+          )}
         </div>
 
         {/* Footer */}
-        <div className="absolute bottom-5 left-5 right-5 flex justify-between items-center">
+        <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between">
           <button
-            onClick={clearAll}
-            className="text-red-400 text-sm hover:underline"
+            onClick={clearPopupItems}
+            className="text-sm text-red-400 hover:text-red-300"
           >
-            Clear All
+            Clear Popup Items
           </button>
 
           <button
             onClick={closePopup}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm"
+            className="rounded-md bg-cyan-600 px-4 py-1.5 text-sm text-white hover:bg-cyan-700"
           >
             Apply
           </button>
