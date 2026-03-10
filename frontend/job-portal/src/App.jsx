@@ -16,7 +16,7 @@ import JobSeekerDashboard from "./pages/JobSeeker/JobSeekerDashboard";
 import AppliedJobs from "./pages/JobSeeker/AppliedJobs";
 import JobDetails from "./pages/JobSeeker/JobDetails";
 import SavedJobs from "./components/ProfilePage/SavedJobs";
-import JobListPage from "./pages/JobSeeker/JobListPage";
+import Profile from "./components/ProfilePage/UserProfile";
 
 // Employer Pages
 import EmployerDashboard from "./pages/Employer/EmployerDashboard";
@@ -38,13 +38,13 @@ import AdminRegister from "./pages/admin/AdminRegister";
 
 // Protected Route
 import ProtectedRoute from "./routes/ProtectedRoute";
-import Profile from "./components/ProfilePage/UserProfile";
 
 const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const hasSeenLoader = sessionStorage.getItem("hasSeenLoader");
+
     if (hasSeenLoader === "true") {
       setLoading(false);
     }
@@ -75,17 +75,14 @@ const App = () => {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/register" element={<AdminRegister />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        
+
         {/* ================= JOB SEEKER ROUTES ================= */}
         <Route element={<ProtectedRoute requireRole="jobseeker" />}>
-          <Route path="/jobseeker/dashboard" element={<JobSeekerDashboard />}>
-            <Route index element={<AppliedJobs />} />
-            <Route path="applied-jobs" element={<AppliedJobs />} />
-          </Route>
+          <Route path="/jobseeker/dashboard" element={<JobSeekerDashboard />} />
+          <Route path="/applied-jobs" element={<AppliedJobs />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/saved-jobs" element={<SavedJobs />} />
           <Route path="/job/:id" element={<JobDetails />} />
-          <Route path="/jobs" element={<JobListPage />} />
         </Route>
 
         {/* ================= EMPLOYER ROUTES ================= */}
@@ -101,28 +98,10 @@ const App = () => {
         <Route path="/recruiter/login" element={<RecruiterLogin />} />
         <Route path="/recruiter/register" element={<RegisterStep1 />} />
         <Route path="/recruiter/register-step2" element={<RegisterStep2 />} />
-        <Route
-          path="/recruiter/dashboard" element={<RecruiterDashboard /> } />
-        <Route
-          path="/recruiter/profile"
-          element={
-      
-              <RecruiterProfile />
-
-          }
-        />
-        <Route
-          path="/post-job"
-          element={
-              <JobPostingForm />
-          }
-        />
-        <Route
-          path="/edit-job/:id"
-          element={
-              <EditJob />
-          }
-        />
+        <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+        <Route path="/recruiter/profile" element={<RecruiterProfile />} />
+        <Route path="/post-job" element={<JobPostingForm />} />
+        <Route path="/edit-job/:id" element={<EditJob />} />
 
         {/* ================= FALLBACK ROUTE ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -130,7 +109,11 @@ const App = () => {
 
       <Toaster
         position="top-right"
-        toastOptions={{ style: { fontSize: "13px" } }}
+        toastOptions={{
+          style: {
+            fontSize: "13px",
+          },
+        }}
       />
     </>
   );

@@ -566,39 +566,55 @@ const JobSeekerDashboard = () => {
               </button>
 
               <AnimatePresence>
-                {profileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    className="absolute right-0 top-14 z-40 w-56 overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl"
-                  >
-                    <button
-                      onClick={() => navigate("/profile")}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-900"
-                    >
-                      <User size={16} />
-                      Profile
-                    </button>
+  {profileOpen && (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      className="absolute right-0 top-14 z-40 w-56 overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl"
+    >
+      <button
+        onClick={() => {
+          setProfileOpen(false);
+          navigate("/profile");
+        }}
+        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-900"
+      >
+        <User size={16} />
+        Profile
+      </button>
 
-                    <button
-                      onClick={() => navigate("/saved-jobs")}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-900"
-                    >
-                      <Briefcase size={16} />
-                      Saved Jobs
-                    </button>
+      <button
+        onClick={() => {
+          setProfileOpen(false);
+          navigate("/saved-jobs");
+        }}
+        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-900"
+      >
+        <Briefcase size={16} />
+        Saved Jobs
+      </button>
 
-                    <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-400 hover:bg-red-950/40"
-                    >
-                      <LogOut size={16} />
-                      Logout
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+      <button
+        onClick={() => {
+          setProfileOpen(false);
+          navigate("/applied-jobs");
+        }}
+        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-200 hover:bg-slate-900"
+      >
+        Applied Jobs
+      </button>
+
+      <button
+        onClick={handleLogout}
+        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-400 hover:bg-red-950/40"
+      >
+        <LogOut size={16} />
+        Logout
+      </button>
+    </motion.div>
+  )}
+</AnimatePresence>
             </div>
           </div>
         </div>

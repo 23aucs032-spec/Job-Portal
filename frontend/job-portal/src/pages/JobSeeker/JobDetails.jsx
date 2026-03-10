@@ -227,35 +227,42 @@ const JobDetails = () => {
   /* ================= APPLY ================= */
 
   const handleApply = async () => {
-    try {
-      if (!token) {
-        alert("You must login first!");
-        navigate("/login");
-        return;
-      }
-
-      setApplying(true);
-
-      const res = await fetch(`${API}/api/jobs/${id}/apply`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Failed to apply");
-
-      setApplied(true);
-      setToast("Applied successfully!");
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setApplying(false);
+  try {
+    if (!token) {
+      alert("You must login first!");
+      navigate("/login");
+      return;
     }
-  };
+
+    setApplying(true);
+
+    const res = await fetch(`${API}/api/applications/apply`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ jobId: id }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to apply");
+    }
+
+    setApplied(true);
+    setToast("Applied successfully!");
+
+    setTimeout(() => {
+      navigate("/applied-jobs");
+    }, 1000);
+  } catch (err) {
+    alert(err.message || "Failed to apply");
+  } finally {
+    setApplying(false);
+  }
+};
 
   /* ================= SAVE JOB ================= */
 
@@ -698,12 +705,12 @@ const JobDetails = () => {
               <h3 className="text-xl font-bold text-white">Actions</h3>
               <div className="mt-5 flex flex-col gap-3">
                 <button
-                  onClick={handleApply}
-                  disabled={applied || applying}
-                  className="rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
-                >
-                  {applied ? "Already Applied" : applying ? "Applying..." : "Apply Now"}
-                </button>
+  onClick={applied ? () => navigate("/applied-jobs") : handleApply}
+  disabled={applying}
+  className="rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+>
+  {applied ? "View Applied Jobs" : applying ? "Applying..." : "Apply Now"}
+</button>
 
                 <button
                   onClick={(e) => handleSaveJob(e, job)}
