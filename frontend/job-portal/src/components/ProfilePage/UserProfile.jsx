@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 import React, { useRef, useState, useEffect } from "react";
-import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit2,
@@ -30,7 +29,7 @@ import api from "../../pages/utils/axiosConfig";
 import ProfilePageHeader from "./ProfilePageHeader";
 
 const cardClass =
-  "rounded-3xl border border-white/10 bg-white/3 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm";
+  "rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm";
 
 const sectionTitleClass = "text-xl font-semibold text-white";
 const actionBtnClass =
@@ -38,183 +37,124 @@ const actionBtnClass =
 const tagClass =
   "rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-200";
 
+const defaultProfile = {
+  name: "",
+  email: "",
+  mobile: "",
+  location: "",
+  dob: "",
+  gender: "",
+  degree: "",
+  college: "",
+  skills: [],
+  languages: [],
+  preferences: {
+    types: [],
+    availability: "",
+    locations: [],
+  },
+  education: [],
+  internships: [],
+  projects: [],
+  competitiveExams: [],
+  employments: [],
+  achievements: [],
+  profileSummary: "",
+};
+
+const defaultPreferences = {
+  types: ["Full Time", "Internship"],
+  availability: "Immediate",
+  locations: ["Chennai", "Bangalore"],
+};
+
+const defaultFormData = {
+  name: "",
+  email: "",
+  mobile: "",
+  location: "",
+  dob: "",
+  degree: "",
+  college: "",
+  gender: "",
+};
+
+const validateEmail = (email) => {
+  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return pattern.test((email || "").trim());
+};
+
+const normalizePreferences = (preferences = {}) => ({
+  types: Array.isArray(preferences?.types) ? preferences.types : [],
+  availability: preferences?.availability || "",
+  locations: Array.isArray(preferences?.locations)
+    ? preferences.locations
+    : [],
+});
+
+const normalizeProfileData = (data = {}) => ({
+  ...defaultProfile,
+  ...data,
+  name: data?.name || "",
+  email: data?.email || "",
+  mobile: data?.mobile || "",
+  location: data?.location || "",
+  dob: data?.dob || "",
+  gender: data?.gender || "",
+  degree: data?.degree || "",
+  college: data?.college || "",
+  skills: Array.isArray(data?.skills) ? data.skills : [],
+  languages: Array.isArray(data?.languages) ? data.languages : [],
+  preferences: normalizePreferences(data?.preferences),
+  education: Array.isArray(data?.education) ? data.education : [],
+  internships: Array.isArray(data?.internships) ? data.internships : [],
+  projects: Array.isArray(data?.projects) ? data.projects : [],
+  competitiveExams: Array.isArray(data?.competitiveExams)
+    ? data.competitiveExams
+    : [],
+  employments: Array.isArray(data?.employments) ? data.employments : [],
+  achievements: Array.isArray(data?.achievements) ? data.achievements : [],
+  profileSummary: data?.profileSummary || "",
+});
+
+const normalizePersonalForm = (data = {}) => ({
+  name: data?.name || "",
+  email: data?.email || "",
+  mobile: data?.mobile || "",
+  location: data?.location || "",
+  dob: data?.dob || "",
+  degree: data?.degree || "",
+  college: data?.college || "",
+  gender: data?.gender || "",
+});
+
 const ProfilePageDark = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [profileSummary, setProfileSummary] = useState("");
   const [achievements, setAchievements] = useState([]);
   const [profileCompletion, setProfileCompletion] = useState(0);
-  const [profile, setProfile] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    location: "",
-    dob: "",
-    gender: "",
-    degree: "",
-    college: "",
-    skills: [],
-    languages: [],
-    preferences: {
-      types: [],
-      availability: "",
-      locations: [],
-    },
-    education: [],
-    internships: [],
-    projects: [],
-    competitiveExams: [],
-    employments: [],
-    achievements: [],
-    profileSummary: "",
-  });
 
-  const [preferences, setPreferences] = useState({
-    types: ["Full Time", "Internship"],
-    availability: "Immediate",
-    locations: ["Chennai", "Bangalore"],
-  });
+  const [profile, setProfile] = useState(defaultProfile);
+
+  const [preferences, setPreferences] = useState(defaultPreferences);
 
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data } = await api.get("/api/profile/me");
-        if (!data) return;
-
-        setProfile(data);
-        setSkills(data.skills || []);
-        setEducationList(data.education || []);
-        setInternships(data.internships || []);
-        setProjects(data.projects || []);
-        setLanguages(data.languages || []);
-        setEmployments(data.employments || []);
-        setCompetitiveExams(data.competitiveExams || []);
-        setAchievements(data.achievements || []);
-        setProfileSummary(data.profileSummary || "");
-
-        if (data.preferences) {
-          setPreferences(data.preferences);
-          setPreferenceForm(data.preferences);
-        }
-
-        if (data.profileImage?.url) {
-          setProfileImage(`http://localhost:5000${data.profileImage.url}`);
-        }
-
-        if (data.resume?.url) {
-          setResume({
-            name: data.resume.name,
-            url: data.resume.url,
-            uploaded: data.resume.uploadedAt
-              ? new Date(data.resume.uploadedAt).toLocaleDateString()
-              : "",
-          });
-        }
-      } catch (error) {
-        console.log("Profile not found", error);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.post("/api/profile/save", profile);
-      alert("Profile saved successfully!");
-      console.log("Saved profile:", data);
-    } catch (error) {
-      console.error("Save error:", error.response?.data);
-      alert(error.response?.data?.message || "Error saving profile");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePersonalDetailsSave = () => {
-    setProfile((prev) => ({
-      ...prev,
-      ...formData,
-    }));
-    closeModal("personalDetails");
-  };
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   const [educationList, setEducationList] = useState([]);
   const [editingEducationIndex, setEditingEducationIndex] = useState(null);
-  const [courseName, setCourseName] = useState("");
-  const [otherCourse, setOtherCourse] = useState("");
-  const [specialization, setSpecialization] = useState("");
-  const [otherSpecialization, setOtherSpecialization] = useState("");
-  const [collegeName, setCollegeName] = useState("");
-  const [selectedGrading, setSelectedGrading] = useState("");
-  const [selectedCourseType, setSelectedCourseType] = useState("");
-  const [startYear, setStartYear] = useState("2023");
-  const [endYear, setEndYear] = useState("2026");
 
   const [skills, setSkills] = useState([]);
+  const [languages, setLanguages] = useState([]);
   const [resume, setResume] = useState(null);
+
   const resumeUrl = resume?.url ? `http://localhost:5000${resume.url}` : null;
   const fileInputRef = useRef(null);
-
-  const handleResumeUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("resume", file);
-
-    try {
-      const { data } = await api.post("/api/profile/upload-resume", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setResume({
-        name: data.name,
-        url: data.url,
-        uploaded: new Date(data.uploadedAt).toLocaleDateString(),
-      });
-    } catch (err) {
-      console.error("Resume upload failed");
-    }
-  };
-
-  const handleDeleteResume = () => {
-    setResume({
-      name: "",
-      uploaded: "",
-      url: "",
-    });
-  };
-
-  const handleSaveEducation = () => {
-    const newEducation = {
-      degree: courseName || otherCourse,
-      specialization: specialization || otherSpecialization,
-      institute: collegeName,
-      instituteLocation: "",
-      startYear,
-      endYear,
-      courseType: selectedCourseType,
-      percentage: "",
-      school12Name: "",
-      school12Location: "",
-      school12StartYear: "",
-      school12EndYear: "",
-      school12Percentage: "",
-      school10Name: "",
-      school10Location: "",
-      school10StartYear: "",
-      school10EndYear: "",
-      school10Percentage: "",
-    };
-
-    setEducationList([...educationList, newEducation]);
-    closeModal("education");
-  };
-
-  const [languages, setLanguages] = useState([]);
 
   const [modals, setModals] = useState({
     personalDetails: false,
@@ -226,46 +166,262 @@ const ProfilePageDark = () => {
     summary: false,
   });
 
-  const [preferenceForm, setPreferenceForm] = useState(preferences);
+  const [preferenceForm, setPreferenceForm] = useState(defaultPreferences);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    location: "",
-    dob: "",
-    degree: "",
-    college: "",
-    gender: "",
+  const [formData, setFormData] = useState(defaultFormData);
+
+  const [showInternshipModal, setShowInternshipModal] = useState(false);
+  const [internships, setInternships] = useState([]);
+  const [editingIndex, setEditingIndex] = useState(null);
+
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [editingProjectIndex, setEditingProjectIndex] = useState(null);
+
+  const [competitiveExams, setCompetitiveExams] = useState([]);
+  const [showExamModal, setShowExamModal] = useState(false);
+  const [editingExamIndex, setEditingExamIndex] = useState(null);
+  const [examForm, setExamForm] = useState({
+    examName: "",
+    score: "",
+    year: "",
+    rank: "",
   });
 
+  const [employments, setEmployments] = useState([]);
+  const [showEmploymentModal, setShowEmploymentModal] = useState(false);
+  const [editingEmploymentIndex, setEditingEmploymentIndex] = useState(null);
+
+  const [employmentForm, setEmploymentForm] = useState({
+    role: "",
+    company: "",
+    fromMonth: "",
+    fromYear: "",
+    toMonth: "",
+    toYear: "",
+    currentlyWorking: false,
+    description: "",
+  });
+
+  useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const { data } = await api.get("/api/profile/me");
+      if (!data) return;
+
+      const normalizedData = normalizeProfileData(data);
+
+      setProfile(normalizedData);
+      setFormData(normalizePersonalForm(normalizedData));
+      setSkills(normalizedData.skills || []);
+      setEducationList(normalizedData.education || []);
+      setInternships(normalizedData.internships || []);
+      setProjects(normalizedData.projects || []);
+      setLanguages(normalizedData.languages || []);
+      setEmployments(normalizedData.employments || []);
+      setCompetitiveExams(normalizedData.competitiveExams || []);
+      setAchievements(normalizedData.achievements || []);
+      setProfileSummary(normalizedData.profileSummary || "");
+
+      if (normalizedData.preferences) {
+        setPreferences(normalizedData.preferences);
+        setPreferenceForm(normalizedData.preferences);
+      }
+
+      if (data.profileImage?.url) {
+        setProfileImage(`http://localhost:5000${data.profileImage.url}`);
+      }
+
+      if (data.resume?.url) {
+        setResume({
+          name: data.resume.name || "",
+          url: data.resume.url || "",
+          uploaded: data.resume.uploadedAt
+            ? new Date(data.resume.uploadedAt).toLocaleDateString()
+            : "",
+        });
+      } else {
+        setResume(null);
+      }
+    } catch (error) {
+      console.log("Profile not found", error);
+    }
+  };
+
+  fetchProfile();
+}, []);
+
+  const handleSave = async () => {
+  try {
+    setLoading(true);
+
+    const payload = {
+      ...profile,
+      skills,
+      education: educationList,
+      internships,
+      languages,
+      projects,
+      employments,
+      competitiveExams,
+      achievements,
+      profileSummary,
+      preferences,
+      resume: resume
+        ? {
+            name: resume.name || "",
+            url: resume.url || "",
+            uploadedAt: resume.uploaded
+              ? new Date().toISOString()
+              : null,
+          }
+        : {
+            name: "",
+            url: "",
+            uploadedAt: null,
+          },
+    };
+
+    const { data } = await api.post("/api/profile/save", payload);
+
+    alert(data.message || "Profile updated successfully");
+    console.log("Saved profile:", data);
+  } catch (error) {
+    console.error("Save error:", error.response?.data);
+    alert(error.response?.data?.message || "Error saving profile");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handlePersonalDetailsSave = () => {
+    setProfile((prev) => ({
+      ...prev,
+      ...normalizePersonalForm(formData),
+    }));
+    closeModal("personalDetails");
+  };
+
+  const handleSendEmailOtp = async () => {
+    if (!validateEmail(formData.email)) {
+      alert("Enter a valid email address");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      await api.post("/api/profile/send-email-otp", {
+        email: formData.email,
+      });
+      setEmailOtpSent(true);
+      setEmailVerified(false);
+      alert("OTP sent to your email");
+    } catch (error) {
+      console.error("Send OTP failed", error);
+      alert(error.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtp.trim()) {
+      alert("Enter OTP");
+      return;
+    }
+
+    try {
+      setVerifyLoading(true);
+      await api.post("/api/profile/verify-email-otp", {
+        email: formData.email,
+        otp: emailOtp,
+      });
+      setEmailVerified(true);
+      alert("Email verified successfully");
+    } catch (error) {
+      console.error("Verify OTP failed", error);
+      setEmailVerified(false);
+      alert(error.response?.data?.message || "Invalid OTP");
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleResumeUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formDataObj = new FormData();
+  formDataObj.append("resume", file);
+
+  try {
+    const { data } = await api.post("/api/profile/upload-resume", formDataObj, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    const savedResume = data.resume;
+
+    setResume({
+      name: savedResume.name || "",
+      url: savedResume.url || "",
+      uploaded: savedResume.uploadedAt
+        ? new Date(savedResume.uploadedAt).toLocaleDateString()
+        : "",
+    });
+
+    setProfile((prev) => ({
+      ...prev,
+      resume: savedResume,
+    }));
+
+    alert(data.message || "Resume uploaded successfully");
+  } catch (err) {
+    console.error("Resume upload failed", err);
+    alert(err.response?.data?.message || "Resume upload failed");
+  }
+};
+
+  const handleDeleteResume = () => {
+    setResume({
+      name: "",
+      uploaded: "",
+      url: "",
+    });
+  };
+
   const openPreferenceModal = () => {
-    setPreferenceForm(preferences);
+    setPreferenceForm(normalizePreferences(preferences));
     openModal("preference");
   };
 
   const handlePreferenceSave = () => {
-    setProfile({
-      ...profile,
-      preferences: preferenceForm,
-    });
+    const normalizedPreferenceForm = normalizePreferences(preferenceForm);
+
+    setProfile((prev) => ({
+      ...prev,
+      preferences: normalizedPreferenceForm,
+    }));
+    setPreferences(normalizedPreferenceForm);
     closeModal("preference");
   };
 
-  const openModal = (modal) => setModals({ ...modals, [modal]: true });
-  const closeModal = (modal) => setModals({ ...modals, [modal]: false });
+  const openModal = (modal) =>
+    setModals((prev) => ({ ...prev, [modal]: true }));
+
+  const closeModal = (modal) =>
+    setModals((prev) => ({ ...prev, [modal]: false }));
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("image", file);
+    const formDataObj = new FormData();
+    formDataObj.append("image", file);
 
     try {
       const { data } = await api.post(
         "/api/profile/upload-profile-image",
-        formData,
+        formDataObj,
         {
           headers: { "Content-Type": "multipart/form-data" },
         }
@@ -273,7 +429,7 @@ const ProfilePageDark = () => {
 
       setProfileImage(`http://localhost:5000${data.url}`);
     } catch (err) {
-      console.error("Image upload failed");
+      console.error("Image upload failed", err);
     }
   };
 
@@ -300,24 +456,17 @@ const ProfilePageDark = () => {
     });
   };
 
-  const [showInternshipModal, setShowInternshipModal] = useState(false);
-  const [internships, setInternships] = useState([]);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [showProjectModal, setShowProjectModal] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const [editingProjectIndex, setEditingProjectIndex] = useState(null);
-  const [competitiveExams, setCompetitiveExams] = useState([]);
-  const [showExamModal, setShowExamModal] = useState(false);
-  const [editingExamIndex, setEditingExamIndex] = useState(null);
-  const [examForm, setExamForm] = useState({
-    examName: "",
-    score: "",
-    year: "",
-    rank: "",
-  });
-
   const handleSaveExam = (examData) => {
-    setCompetitiveExams([...competitiveExams, examData]);
+    if (editingExamIndex !== null) {
+      setCompetitiveExams((prev) =>
+        prev.map((item, index) =>
+          index === editingExamIndex ? examData : item
+        )
+      );
+    } else {
+      setCompetitiveExams((prev) => [...prev, examData]);
+    }
+
     setShowExamModal(false);
     setEditingExamIndex(null);
     setExamForm({
@@ -330,28 +479,18 @@ const ProfilePageDark = () => {
 
   const handleEditExam = (index) => {
     setEditingExamIndex(index);
-    setExamForm(competitiveExams[index]);
+    setExamForm({
+      examName: competitiveExams[index]?.examName || "",
+      score: competitiveExams[index]?.score || "",
+      year: competitiveExams[index]?.year || "",
+      rank: competitiveExams[index]?.rank || "",
+    });
     setShowExamModal(true);
   };
 
   const handleDeleteExam = (index) => {
-    setCompetitiveExams(competitiveExams.filter((_, i) => i !== index));
+    setCompetitiveExams((prev) => prev.filter((_, i) => i !== index));
   };
-
-  const [employments, setEmployments] = useState([]);
-  const [showEmploymentModal, setShowEmploymentModal] = useState(false);
-  const [editingEmploymentIndex, setEditingEmploymentIndex] = useState(null);
-
-  const [employmentForm, setEmploymentForm] = useState({
-    role: "",
-    company: "",
-    fromMonth: "",
-    fromYear: "",
-    toMonth: "",
-    toYear: "",
-    currentlyWorking: false,
-    description: "",
-  });
 
   const handleAddEmployment = () => {
     setEmploymentForm({
@@ -386,11 +525,13 @@ const ProfilePageDark = () => {
     };
 
     if (editingEmploymentIndex !== null) {
-      const updated = [...employments];
-      updated[editingEmploymentIndex] = newEmployment;
-      setEmployments(updated);
+      setEmployments((prev) =>
+        prev.map((item, index) =>
+          index === editingEmploymentIndex ? newEmployment : item
+        )
+      );
     } else {
-      setEmployments([...employments, newEmployment]);
+      setEmployments((prev) => [...prev, newEmployment]);
     }
 
     setShowEmploymentModal(false);
@@ -400,21 +541,21 @@ const ProfilePageDark = () => {
   const handleEditEmployment = (index) => {
     const item = employments[index];
     setEmploymentForm({
-      role: item.role || "",
-      company: item.company || "",
-      fromMonth: item.fromMonth || "",
-      fromYear: item.fromYear || "",
-      toMonth: item.toMonth || "",
-      toYear: item.toYear || "",
-      currentlyWorking: item.currentlyWorking || false,
-      description: item.description || "",
+      role: item?.role || "",
+      company: item?.company || "",
+      fromMonth: item?.fromMonth || "",
+      fromYear: item?.fromYear || "",
+      toMonth: item?.toMonth || "",
+      toYear: item?.toYear || "",
+      currentlyWorking: item?.currentlyWorking || false,
+      description: item?.description || "",
     });
     setEditingEmploymentIndex(index);
     setShowEmploymentModal(true);
   };
 
   const handleDeleteEmployment = (index) => {
-    setEmployments(employments.filter((_, i) => i !== index));
+    setEmployments((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -471,11 +612,11 @@ const ProfilePageDark = () => {
 
   const handleSaveInternship = (data) => {
     if (editingIndex !== null) {
-      const updated = [...internships];
-      updated[editingIndex] = data;
-      setInternships(updated);
+      setInternships((prev) =>
+        prev.map((item, index) => (index === editingIndex ? data : item))
+      );
     } else {
-      setInternships([...internships, data]);
+      setInternships((prev) => [...prev, data]);
     }
 
     setShowInternshipModal(false);
@@ -488,18 +629,22 @@ const ProfilePageDark = () => {
   };
 
   const handleDeleteInternship = (index) => {
-    setInternships(internships.filter((_, i) => i !== index));
+    setInternships((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveProject = (data) => {
     if (editingProjectIndex !== null) {
-      const updated = [...projects];
-      updated[editingProjectIndex] = data;
-      setProjects(updated);
+      setProjects((prev) =>
+        prev.map((item, index) =>
+          index === editingProjectIndex ? data : item
+        )
+      );
       setEditingProjectIndex(null);
     } else {
       setProjects((prev) => [...prev, data]);
     }
+
+    setShowProjectModal(false);
   };
 
   const modalVariants = {
@@ -523,26 +668,35 @@ const ProfilePageDark = () => {
     visible: { transition: { staggerChildren: 0.08 } },
   };
 
+  const anyBlockingModalOpen =
+    modals.education ||
+    modals.preference ||
+    modals.skills ||
+    modals.languages ||
+    modals.personalDetails ||
+    modals.summary ||
+    showEmploymentModal ||
+    showExamModal ||
+    showInternshipModal ||
+    showProjectModal;
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#13223f_0%,#0b1120_35%,#060b16_100%)] px-4 py-6 text-slate-300 md:px-8">
       <ProfilePageHeader />
 
-      <div className="mx-auto max-w-375">
-        {/* HERO */}
+      <div className="mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           className={`${cardClass} mb-8 overflow-hidden`}
         >
           <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-            {/* LEFT */}
             <div className="space-y-6">
               <div className="relative mx-auto w-fit">
                 <div className="h-36 w-36 overflow-hidden rounded-4xl border border-white/10 bg-slate-900 shadow-xl">
                   <img
                     src={
-                      profileImage ||
-                      "https://ui-avatars.com/api/?name=KP&background=111827&color=ffffff"
+                      profileImage 
                     }
                     alt="Profile"
                     className="h-full w-full object-cover"
@@ -569,7 +723,7 @@ const ProfilePageDark = () => {
                 </label>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-base font-semibold text-white">
                     Profile Completion
@@ -594,7 +748,6 @@ const ProfilePageDark = () => {
               </div>
             </div>
 
-            {/* RIGHT */}
             <div className="flex flex-col justify-between">
               <div>
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
@@ -604,8 +757,9 @@ const ProfilePageDark = () => {
                         {profile.name || "Your Name"}
                       </h1>
                       <button
+                        type="button"
                         onClick={() => {
-                          setFormData(profile);
+                          setFormData(normalizePersonalForm(profile));
                           openModal("personalDetails");
                         }}
                         className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-white/10 hover:text-cyan-300"
@@ -633,7 +787,7 @@ const ProfilePageDark = () => {
                 </div>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="mb-2 flex items-center gap-2 text-slate-400">
                       <MapPin size={15} />
                       <span className="text-xs uppercase tracking-wide">
@@ -645,7 +799,7 @@ const ProfilePageDark = () => {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="mb-2 flex items-center gap-2 text-slate-400">
                       <Phone size={15} />
                       <span className="text-xs uppercase tracking-wide">
@@ -657,7 +811,7 @@ const ProfilePageDark = () => {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="mb-2 flex items-center gap-2 text-slate-400">
                       <Calendar size={15} />
                       <span className="text-xs uppercase tracking-wide">
@@ -669,7 +823,7 @@ const ProfilePageDark = () => {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="mb-2 flex items-center gap-2 text-slate-400">
                       <Mail size={15} />
                       <span className="text-xs uppercase tracking-wide">
@@ -691,11 +845,9 @@ const ProfilePageDark = () => {
           </div>
         </motion.div>
 
-        {/* LAYOUT */}
         <div className="grid gap-8 xl:grid-cols-[280px_1fr]">
-          {/* SIDEBAR */}
           <aside className="xl:sticky xl:top-28 xl:h-fit">
-            <div className={`${cardClass}`}>
+            <div className={cardClass}>
               <h3 className="mb-5 text-lg font-semibold text-white">
                 Quick Links
               </h3>
@@ -704,6 +856,7 @@ const ProfilePageDark = () => {
                 {quickLinks.map((item, index) => (
                   <li key={index}>
                     <button
+                      type="button"
                       onClick={() => scrollToSection(item)}
                       className="w-full rounded-2xl px-4 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                     >
@@ -715,7 +868,6 @@ const ProfilePageDark = () => {
             </div>
           </aside>
 
-          {/* CONTENT */}
           <div>
             <motion.main
               className="space-y-6"
@@ -723,7 +875,6 @@ const ProfilePageDark = () => {
               initial="hidden"
               animate="visible"
             >
-              {/* Career Preferences */}
               <motion.section
                 ref={sectionsRef.Preference}
                 variants={sectionVariants}
@@ -738,23 +889,27 @@ const ProfilePageDark = () => {
                     </p>
                   </div>
 
-                  <button onClick={openPreferenceModal} className={actionBtnClass}>
+                  <button
+                    type="button"
+                    onClick={openPreferenceModal}
+                    className={actionBtnClass}
+                  >
                     <Plus size={16} />
                     Add / Edit
                   </button>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">
                       Preferred Job Type
                     </p>
                     <p className="text-sm text-white">
-                      {preferences.types.join(" • ")}
+                      {(preferences.types || []).join(" • ")}
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">
                       Availability
                     </p>
@@ -763,162 +918,157 @@ const ProfilePageDark = () => {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">
                       Preferred Locations
                     </p>
                     <p className="text-sm text-white">
-                      {preferences.locations.join(" • ")}
+                      {(preferences.locations || []).join(" • ")}
                     </p>
                   </div>
                 </div>
-
-                <CareerPreferenceModal
-                  modals={modals}
-                  closeModal={closeModal}
-                  modalVariants={modalVariants}
-                  preferenceForm={preferenceForm}
-                  setPreferenceForm={setPreferenceForm}
-                  handlePreferenceSave={handlePreferenceSave}
-                />
               </motion.section>
 
-              {/* Education */}
-<motion.section
-  ref={sectionsRef.Education}
-  variants={sectionVariants}
-  className={cardClass}
->
-  <div className="mb-6 flex items-center justify-between">
-    <h2 className={sectionTitleClass}>Education</h2>
-    <button
-      onClick={() => {
-        setEditingEducationIndex(null);
-        openModal("education");
-      }}
-      className={actionBtnClass}
-    >
-      <Plus size={16} />
-      Add Education
-    </button>
-  </div>
-
-  {!educationList || educationList.length === 0 ? (
-    <p className="text-sm text-slate-400">
-      No education details added yet.
-    </p>
-  ) : (
-    <div className="space-y-5">
-      {educationList.map((edu, index) => (
-        <div
-          key={edu._id || index}
-          className="rounded-2xl border border-white/10 bg-white/4 p-5"
-        >
-          <div className="mb-4 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold text-white">
-                {edu.degree || "Course not specified"}
-              </h3>
-
-              {edu.specialization && (
-                <p className="mt-1 text-sm text-slate-400">
-                  {edu.specialization}
-                </p>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setEditingEducationIndex(index);
-                  openModal("education");
-                }}
-                className="text-sm text-cyan-400 hover:underline"
+              <motion.section
+                ref={sectionsRef.Education}
+                variants={sectionVariants}
+                className={cardClass}
               >
-                Edit
-              </button>
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className={sectionTitleClass}>Education</h2>
 
-              <button
-                onClick={() => {
-                  const updated = educationList.filter((_, i) => i !== index);
-                  setEducationList(updated);
-                }}
-                className="text-sm text-red-400 hover:underline"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingEducationIndex(null);
+                      openModal("education");
+                    }}
+                    className={actionBtnClass}
+                  >
+                    <Plus size={16} />
+                    Add Education
+                  </button>
+                </div>
 
-          <p className="text-sm text-slate-300">
-            {edu.institute} {edu.instituteLocation && `• ${edu.instituteLocation}`}
-          </p>
+                {!educationList?.length ? (
+                  <p className="text-sm text-slate-400">
+                    No education details added yet.
+                  </p>
+                ) : (
+                  <div className="space-y-5">
+                    {educationList.map((edu, index) => (
+                      <div
+                        key={edu._id || index}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-5"
+                      >
+                        <div className="mb-4 flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">
+                              {edu.degree || "Course not specified"}
+                            </h3>
 
-          <p className="mt-1 text-xs text-slate-500">
-            {edu.startYear} - {edu.endYear}{" "}
-            {edu.courseType && `• ${edu.courseType}`}
-          </p>
+                            {edu.specialization ? (
+                              <p className="mt-1 text-sm text-slate-400">
+                                {edu.specialization}
+                              </p>
+                            ) : null}
+                          </div>
 
-          {edu.percentage && (
-            <p className="mt-2 text-sm text-cyan-400">{edu.percentage}%</p>
-          )}
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingEducationIndex(index);
+                                openModal("education");
+                              }}
+                              className="text-sm text-cyan-400 hover:underline"
+                            >
+                              Edit
+                            </button>
 
-          {(edu.school12Name || edu.school12Percentage) && (
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <h4 className="mb-1 font-medium text-slate-200">
-                12th Details
-              </h4>
-              <p className="text-sm text-slate-400">
-                {edu.school12Name}{" "}
-                {edu.school12Location && `• ${edu.school12Location}`}
-              </p>
-              <p className="text-xs text-slate-500">
-                {edu.school12StartYear} - {edu.school12EndYear}
-              </p>
-              {edu.school12Percentage && (
-                <p className="mt-1 text-sm text-cyan-400">
-                  {edu.school12Percentage}%
-                </p>
-              )}
-            </div>
-          )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEducationList((prev) =>
+                                  prev.filter((_, i) => i !== index)
+                                )
+                              }
+                              className="text-sm text-red-400 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
 
-          {(edu.school10Name || edu.school10Percentage) && (
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <h4 className="mb-1 font-medium text-slate-200">
-                10th Details
-              </h4>
-              <p className="text-sm text-slate-400">
-                {edu.school10Name}{" "}
-                {edu.school10Location && `• ${edu.school10Location}`}
-              </p>
-              <p className="text-xs text-slate-500">
-                {edu.school10StartYear} - {edu.school10EndYear}
-              </p>
-              {edu.school10Percentage && (
-                <p className="mt-1 text-sm text-cyan-400">
-                  {edu.school10Percentage}%
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  )}
+                        <p className="text-sm text-slate-300">
+                          {edu.institute || "Institute not added"}
+                          {edu.instituteLocation
+                            ? ` • ${edu.instituteLocation}`
+                            : ""}
+                        </p>
 
-  <EducationModal
-    modals={modals}
-    closeModal={closeModal}
-    modalVariants={modalVariants}
-    educationList={educationList}
-    setEducationList={setEducationList}
-    editingEducationIndex={editingEducationIndex}
-    setEditingEducationIndex={setEditingEducationIndex}
-  />
-</motion.section>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {edu.startYear || "-"} - {edu.endYear || "-"}
+                          {edu.courseType ? ` • ${edu.courseType}` : ""}
+                        </p>
 
-              {/* Skills */}
+                        {edu.percentage ? (
+                          <p className="mt-2 text-sm text-cyan-400">
+                            {edu.percentage}%
+                          </p>
+                        ) : null}
+
+                        {(edu.school12Name || edu.school12Percentage) && (
+                          <div className="mt-4 border-t border-white/10 pt-4">
+                            <h4 className="mb-1 font-medium text-slate-200">
+                              12th Details
+                            </h4>
+                            <p className="text-sm text-slate-400">
+                              {edu.school12Name || "School not added"}
+                              {edu.school12Location
+                                ? ` • ${edu.school12Location}`
+                                : ""}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {edu.school12StartYear || "-"} -{" "}
+                              {edu.school12EndYear || "-"}
+                            </p>
+                            {edu.school12Percentage ? (
+                              <p className="mt-1 text-sm text-cyan-400">
+                                {edu.school12Percentage}%
+                              </p>
+                            ) : null}
+                          </div>
+                        )}
+
+                        {(edu.school10Name || edu.school10Percentage) && (
+                          <div className="mt-4 border-t border-white/10 pt-4">
+                            <h4 className="mb-1 font-medium text-slate-200">
+                              10th Details
+                            </h4>
+                            <p className="text-sm text-slate-400">
+                              {edu.school10Name || "School not added"}
+                              {edu.school10Location
+                                ? ` • ${edu.school10Location}`
+                                : ""}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {edu.school10StartYear || "-"} -{" "}
+                              {edu.school10EndYear || "-"}
+                            </p>
+                            {edu.school10Percentage ? (
+                              <p className="mt-1 text-sm text-cyan-400">
+                                {edu.school10Percentage}%
+                              </p>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.section>
+
               <motion.section
                 ref={sectionsRef.KeySkills}
                 variants={sectionVariants}
@@ -927,6 +1077,7 @@ const ProfilePageDark = () => {
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className={sectionTitleClass}>Key Skills</h2>
                   <button
+                    type="button"
                     onClick={() => openModal("skills")}
                     className={actionBtnClass}
                   >
@@ -956,7 +1107,6 @@ const ProfilePageDark = () => {
                 />
               </motion.section>
 
-              {/* Languages */}
               <motion.section
                 ref={sectionsRef.Languages}
                 variants={sectionVariants}
@@ -965,6 +1115,7 @@ const ProfilePageDark = () => {
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className={sectionTitleClass}>Languages</h2>
                   <button
+                    type="button"
                     onClick={() => openModal("languages")}
                     className={actionBtnClass}
                   >
@@ -981,7 +1132,7 @@ const ProfilePageDark = () => {
                   <div className="flex flex-wrap gap-3">
                     {languages.map((lang, index) => (
                       <span key={index} className={tagClass}>
-                        {typeof lang === "string" ? lang : lang.name}
+                        {typeof lang === "string" ? lang : lang?.name || ""}
                       </span>
                     ))}
                   </div>
@@ -996,7 +1147,6 @@ const ProfilePageDark = () => {
                 />
               </motion.section>
 
-              {/* Internships */}
               <motion.section
                 ref={sectionsRef.Internships}
                 variants={sectionVariants}
@@ -1005,6 +1155,7 @@ const ProfilePageDark = () => {
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className={sectionTitleClass}>Internships</h2>
                   <button
+                    type="button"
                     onClick={() => {
                       setEditingIndex(null);
                       setShowInternshipModal(true);
@@ -1037,16 +1188,18 @@ const ProfilePageDark = () => {
                     {internships.map((item, index) => (
                       <div
                         key={index}
-                        className="relative rounded-2xl border border-white/10 bg-white/3 p-5"
+                        className="relative rounded-2xl border border-white/10 bg-white/5 p-5"
                       >
                         <div className="absolute right-4 top-4 flex gap-4">
                           <button
+                            type="button"
                             onClick={() => handleEditInternship(index)}
                             className="text-sm text-cyan-400 hover:underline"
                           >
                             Edit
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDeleteInternship(index)}
                             className="text-sm text-red-400 hover:underline"
                           >
@@ -1098,7 +1251,6 @@ const ProfilePageDark = () => {
                 )}
               </motion.section>
 
-              {/* Projects */}
               <motion.section
                 ref={sectionsRef.Projects}
                 variants={sectionVariants}
@@ -1107,6 +1259,7 @@ const ProfilePageDark = () => {
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className={sectionTitleClass}>Projects</h2>
                   <button
+                    type="button"
                     onClick={() => {
                       setEditingProjectIndex(null);
                       setShowProjectModal(true);
@@ -1127,7 +1280,7 @@ const ProfilePageDark = () => {
                     {projects.map((project, index) => (
                       <div
                         key={index}
-                        className="rounded-2xl border border-white/10 bg-white/3 p-5"
+                        className="rounded-2xl border border-white/10 bg-white/5 p-5"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
@@ -1142,6 +1295,7 @@ const ProfilePageDark = () => {
 
                           <div className="flex gap-3">
                             <button
+                              type="button"
                               className="text-sm text-cyan-400 hover:underline"
                               onClick={() => {
                                 setEditingProjectIndex(index);
@@ -1151,11 +1305,12 @@ const ProfilePageDark = () => {
                               Edit
                             </button>
                             <button
+                              type="button"
                               className="text-sm text-red-400 hover:underline"
                               onClick={() => {
-                                const updated = [...projects];
-                                updated.splice(index, 1);
-                                setProjects(updated);
+                                setProjects((prev) =>
+                                  prev.filter((_, i) => i !== index)
+                                );
                               }}
                             >
                               Delete
@@ -1219,7 +1374,6 @@ const ProfilePageDark = () => {
                 />
               </motion.section>
 
-              {/* Profile Summary */}
               <motion.section
                 ref={sectionsRef["Profile Summary"]}
                 variants={sectionVariants}
@@ -1229,6 +1383,7 @@ const ProfilePageDark = () => {
                   <h2 className={sectionTitleClass}>Profile Summary</h2>
 
                   <button
+                    type="button"
                     onClick={() => openModal("summary")}
                     className={actionBtnClass}
                   >
@@ -1242,7 +1397,6 @@ const ProfilePageDark = () => {
                 </p>
               </motion.section>
 
-              {/* Academic Achievements */}
               <motion.section
                 ref={sectionsRef["Academic Achievements"]}
                 variants={sectionVariants}
@@ -1254,6 +1408,7 @@ const ProfilePageDark = () => {
                   </h2>
 
                   <button
+                    type="button"
                     onClick={() => openModal("accomplishments")}
                     className={actionBtnClass}
                   >
@@ -1293,12 +1448,12 @@ const ProfilePageDark = () => {
               </motion.section>
 
               <AcademicAchievements
-                modals={modals}
-                closeModal={closeModal}
-                onSave={(data) => setAchievements(data)}
-              />
+  modals={modals}
+  closeModal={closeModal}
+  initialData={achievements}
+  onSave={(data) => setAchievements(data)}
+/>
 
-              {/* Competitive Exams */}
               <motion.section
                 ref={sectionsRef.CompetitiveExams}
                 variants={sectionVariants}
@@ -1307,6 +1462,7 @@ const ProfilePageDark = () => {
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className={sectionTitleClass}>Competitive Exams</h2>
                   <button
+                    type="button"
                     onClick={() => {
                       setEditingExamIndex(null);
                       setExamForm({
@@ -1333,16 +1489,18 @@ const ProfilePageDark = () => {
                     {competitiveExams.map((exam, index) => (
                       <div
                         key={index}
-                        className="relative rounded-2xl border border-white/10 bg-white/3 p-5"
+                        className="relative rounded-2xl border border-white/10 bg-white/5 p-5"
                       >
                         <div className="absolute right-4 top-4 flex gap-3">
                           <button
+                            type="button"
                             onClick={() => handleEditExam(index)}
                             className="text-sm text-cyan-400 hover:underline"
                           >
                             Edit
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDeleteExam(index)}
                             className="text-sm text-red-400 hover:underline"
                           >
@@ -1368,7 +1526,6 @@ const ProfilePageDark = () => {
                 )}
               </motion.section>
 
-              {/* Employment */}
               <motion.section
                 ref={sectionsRef.Employment}
                 variants={sectionVariants}
@@ -1379,7 +1536,11 @@ const ProfilePageDark = () => {
                     <Briefcase size={20} /> Employment
                   </h2>
 
-                  <button onClick={handleAddEmployment} className={actionBtnClass}>
+                  <button
+                    type="button"
+                    onClick={handleAddEmployment}
+                    className={actionBtnClass}
+                  >
                     <Plus size={16} />
                     Add Employment
                   </button>
@@ -1394,7 +1555,7 @@ const ProfilePageDark = () => {
                     {employments.map((job, index) => (
                       <div
                         key={index}
-                        className="rounded-2xl border border-white/10 bg-white/3 p-5"
+                        className="rounded-2xl border border-white/10 bg-white/5 p-5"
                       >
                         <div className="flex justify-between gap-4">
                           <div>
@@ -1414,12 +1575,14 @@ const ProfilePageDark = () => {
 
                           <div className="flex gap-4">
                             <button
+                              type="button"
                               onClick={() => handleEditEmployment(index)}
                               className="text-cyan-400"
                             >
                               <Edit2 size={16} />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleDeleteEmployment(index)}
                               className="text-red-400"
                             >
@@ -1439,7 +1602,6 @@ const ProfilePageDark = () => {
                 )}
               </motion.section>
 
-              {/* Resume */}
               <motion.section
                 ref={sectionsRef.Resume}
                 variants={sectionVariants}
@@ -1449,7 +1611,7 @@ const ProfilePageDark = () => {
 
                 {resume && resume.url ? (
                   <>
-                    <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-white/3 p-5 md:flex-row md:items-center">
+                    <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 md:flex-row md:items-center">
                       <div
                         onClick={() => window.open(resumeUrl, "_blank")}
                         className="flex cursor-pointer items-center gap-4"
@@ -1467,6 +1629,7 @@ const ProfilePageDark = () => {
                       </div>
 
                       <button
+                        type="button"
                         onClick={handleDeleteResume}
                         className="text-red-400 hover:text-red-300"
                       >
@@ -1476,6 +1639,7 @@ const ProfilePageDark = () => {
 
                     <div className="mt-4 flex flex-wrap gap-5 text-sm">
                       <button
+                        type="button"
                         onClick={() => window.open(resumeUrl, "_blank")}
                         className="flex items-center gap-2 text-cyan-400"
                       >
@@ -1491,6 +1655,7 @@ const ProfilePageDark = () => {
                       </a>
 
                       <button
+                        type="button"
                         onClick={() => fileInputRef.current.click()}
                         className="flex items-center gap-2 text-cyan-400"
                       >
@@ -1499,13 +1664,14 @@ const ProfilePageDark = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-white/2 p-10 text-center">
+                  <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-white/5 p-10 text-center">
                     <Upload size={40} className="mb-3 text-cyan-400" />
                     <p className="mb-4 text-sm text-slate-400">
                       No resume uploaded
                     </p>
 
                     <button
+                      type="button"
                       onClick={() => fileInputRef.current.click()}
                       className="rounded-2xl bg-cyan-600 px-6 py-3 text-white transition hover:bg-cyan-500"
                     >
@@ -1527,7 +1693,6 @@ const ProfilePageDark = () => {
         </div>
       </div>
 
-      {/* PERSONAL DETAILS MODAL */}
       <AnimatePresence>
         {modals.personalDetails && (
           <motion.div
@@ -1557,7 +1722,7 @@ const ProfilePageDark = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
+                    value={formData.name || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
@@ -1597,14 +1762,73 @@ const ProfilePageDark = () => {
                   <label className="mb-1.5 block text-sm text-slate-400">
                     Email
                   </label>
-                  <input
-                    type="email"
-                    value={formData.email || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500"
-                  />
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      <input
+                        type="email"
+                        value={formData.email || ""}
+                        onChange={(e) => {
+                          const newEmail = e.target.value;
+                          const originalEmail = (profile.email || "")
+                            .trim()
+                            .toLowerCase();
+
+                          setFormData({ ...formData, email: newEmail });
+
+                          if (newEmail.trim().toLowerCase() === originalEmail) {
+                            setEmailVerified(true);
+                            setEmailOtpSent(false);
+                            setEmailOtp("");
+                          } else {
+                            setEmailVerified(false);
+                          }
+                        }}
+                        className="flex-1 rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={handleSendEmailOtp}
+                        disabled={otpLoading || !formData.email}
+                        className="rounded-2xl bg-cyan-600 px-4 py-3 text-sm text-white transition hover:bg-cyan-500 disabled:opacity-60"
+                      >
+                        {otpLoading ? "Sending..." : "Send OTP"}
+                      </button>
+                    </div>
+
+                    {emailVerified && (
+                      <p className="text-xs text-emerald-400">
+                        Email verified
+                      </p>
+                    )}
+
+                    {emailOtpSent && !emailVerified && (
+                      <div className="space-y-3">
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            value={emailOtp || ""}
+                            onChange={(e) => setEmailOtp(e.target.value)}
+                            placeholder="Enter OTP"
+                            className="flex-1 rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={handleVerifyEmailOtp}
+                            disabled={verifyLoading}
+                            className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm text-white transition hover:bg-emerald-500 disabled:opacity-60"
+                          >
+                            {verifyLoading ? "Verifying..." : "Verify OTP"}
+                          </button>
+                        </div>
+
+                        <p className="text-xs text-slate-400">
+                          OTP sent to {formData.email}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="md:col-span-2">
@@ -1635,7 +1859,7 @@ const ProfilePageDark = () => {
                   </label>
                   <input
                     type="date"
-                    value={formData.dob}
+                    value={formData.dob || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, dob: e.target.value })
                     }
@@ -1649,7 +1873,7 @@ const ProfilePageDark = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.location}
+                    value={formData.location || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, location: e.target.value })
                     }
@@ -1663,7 +1887,7 @@ const ProfilePageDark = () => {
                   </label>
                   <input
                     type="tel"
-                    value={formData.mobile}
+                    value={formData.mobile || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, mobile: e.target.value })
                     }
@@ -1674,6 +1898,7 @@ const ProfilePageDark = () => {
 
               <div className="mt-8 flex justify-end gap-4 border-t border-white/10 pt-6">
                 <button
+                  type="button"
                   className="px-6 py-2.5 text-slate-400"
                   onClick={() => closeModal("personalDetails")}
                 >
@@ -1681,6 +1906,7 @@ const ProfilePageDark = () => {
                 </button>
 
                 <button
+                  type="button"
                   className="rounded-2xl bg-cyan-600 px-8 py-2.5 text-white transition hover:bg-cyan-500"
                   onClick={handlePersonalDetailsSave}
                 >
@@ -1692,7 +1918,6 @@ const ProfilePageDark = () => {
         )}
       </AnimatePresence>
 
-      {/* PROFILE SUMMARY MODAL */}
       {modals.summary && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
@@ -1726,22 +1951,24 @@ const ProfilePageDark = () => {
                 className="min-h-48 w-full resize-y rounded-2xl border border-white/10 bg-white/5 p-4 text-slate-200 outline-none transition placeholder:text-slate-500 focus:border-cyan-500"
                 placeholder="Type here"
                 maxLength={1000}
-                value={profileSummary}
+                value={profileSummary || ""}
                 onChange={(e) => setProfileSummary(e.target.value)}
               />
               <div className="absolute bottom-3 right-4 text-xs text-slate-500">
-                {profileSummary.length}/1000
+                {(profileSummary || "").length}/1000
               </div>
             </div>
 
             <div className="mt-8 flex justify-end gap-4 border-t border-white/10 pt-6">
               <button
+                type="button"
                 className="text-sm font-medium text-slate-400"
                 onClick={() => closeModal("summary")}
               >
                 Cancel
               </button>
               <button
+                type="button"
                 className="rounded-2xl bg-cyan-600 px-10 py-3 font-medium text-white transition hover:bg-cyan-500"
                 onClick={() => closeModal("summary")}
               >
@@ -1752,7 +1979,6 @@ const ProfilePageDark = () => {
         </motion.div>
       )}
 
-      {/* EMPLOYMENT MODAL */}
       <AnimatePresence>
         {showEmploymentModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -1767,7 +1993,6 @@ const ProfilePageDark = () => {
         )}
       </AnimatePresence>
 
-      {/* EXAM MODAL */}
       {showExamModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-[#0f172a] p-6 shadow-2xl">
@@ -1800,12 +2025,14 @@ const ProfilePageDark = () => {
 
             <div className="mt-6 flex justify-end gap-4">
               <button
+                type="button"
                 className="px-6 py-2.5 text-slate-400"
                 onClick={() => setShowExamModal(false)}
               >
                 Cancel
               </button>
               <button
+                type="button"
                 className="rounded-2xl bg-cyan-600 px-8 py-2.5 text-white"
                 onClick={() => handleSaveExam(examForm)}
               >
@@ -1816,16 +2043,45 @@ const ProfilePageDark = () => {
         </div>
       )}
 
-      {/* SAVE BUTTON */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="rounded-2xl bg-linear-to-r from-emerald-500 to-teal-500 px-7 py-3 font-semibold text-white shadow-2xl transition hover:scale-[1.02] hover:from-emerald-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {loading ? "Saving..." : "Save Profile"}
-        </button>
-      </div>
+      <AnimatePresence>
+        {modals.preference && (
+          <CareerPreferenceModal
+            modals={modals}
+            closeModal={closeModal}
+            modalVariants={modalVariants}
+            preferenceForm={preferenceForm}
+            setPreferenceForm={setPreferenceForm}
+            handlePreferenceSave={handlePreferenceSave}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modals.education && (
+          <EducationModal
+            modals={modals}
+            closeModal={closeModal}
+            modalVariants={modalVariants}
+            educationList={educationList}
+            setEducationList={setEducationList}
+            editingEducationIndex={editingEducationIndex}
+            setEditingEducationIndex={setEditingEducationIndex}
+          />
+        )}
+      </AnimatePresence>
+
+      {!anyBlockingModalOpen && (
+        <div className="fixed bottom-5 right-5 z-120">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading}
+            className="rounded-2xl bg-linear-to-r from-emerald-500 to-teal-500 px-7 py-3 font-semibold text-white shadow-2xl transition hover:scale-[1.02] hover:from-emerald-400 hover:to-teal-400 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loading ? "Saving..." : "Save Profile"}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
 import { X, Eye, Download, Trash2, UploadCloud } from "lucide-react";
 
@@ -57,6 +58,18 @@ const EducationModal = ({
     }
   }, [modals.education, editingEducationIndex, educationList]);
 
+  useEffect(() => {
+    if (modals.education) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [modals.education]);
+
   if (!modals.education) return null;
 
   const inputClass =
@@ -78,12 +91,41 @@ const EducationModal = ({
   };
 
   const handleSave = () => {
+    const cleanedData = {
+      ...formData,
+      degree: formData.degree?.trim() || "",
+      specialization: formData.specialization?.trim() || "",
+      institute: formData.institute?.trim() || "",
+      instituteLocation: formData.instituteLocation?.trim() || "",
+      startYear: formData.startYear?.trim() || "",
+      endYear: formData.endYear?.trim() || "",
+      courseType: formData.courseType?.trim() || "",
+      percentage: formData.percentage?.trim() || "",
+      school12Name: formData.school12Name?.trim() || "",
+      school12Location: formData.school12Location?.trim() || "",
+      school12StartYear: formData.school12StartYear?.trim() || "",
+      school12EndYear: formData.school12EndYear?.trim() || "",
+      school12Percentage: formData.school12Percentage?.trim() || "",
+      school10Name: formData.school10Name?.trim() || "",
+      school10Location: formData.school10Location?.trim() || "",
+      school10StartYear: formData.school10StartYear?.trim() || "",
+      school10EndYear: formData.school10EndYear?.trim() || "",
+      school10Percentage: formData.school10Percentage?.trim() || "",
+    };
+
+    if (!cleanedData.degree && !cleanedData.institute) {
+      alert("Please enter at least Course Name or Institute Name");
+      return;
+    }
+
     if (editingEducationIndex !== null) {
-      const updatedList = [...educationList];
-      updatedList[editingEducationIndex] = formData;
-      setEducationList(updatedList);
+      setEducationList((prev) =>
+        prev.map((item, index) =>
+          index === editingEducationIndex ? cleanedData : item
+        )
+      );
     } else {
-      setEducationList([...(educationList || []), formData]);
+      setEducationList((prev) => [...(prev || []), cleanedData]);
     }
 
     setFormData(initialState);
@@ -94,10 +136,10 @@ const EducationModal = ({
   const handleDeleteCurrent = () => {
     if (editingEducationIndex === null) return;
 
-    const updatedList = educationList.filter(
-      (_, i) => i !== editingEducationIndex
+    setEducationList((prev) =>
+      prev.filter((_, index) => index !== editingEducationIndex)
     );
-    setEducationList(updatedList);
+
     setFormData(initialState);
     setEditingEducationIndex(null);
     closeModal("education");
@@ -118,7 +160,7 @@ const EducationModal = ({
           {label}
         </label>
 
-        <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/3 p-4 text-slate-300 transition hover:bg-white/5">
+        <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-slate-300 transition hover:bg-white/10">
           <UploadCloud size={18} />
           <span className="text-sm">Upload file</span>
           <input
@@ -131,7 +173,7 @@ const EducationModal = ({
         </label>
 
         {file && (
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/4 p-4">
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="truncate pr-4 text-sm text-slate-300">
               {file.name || "Uploaded File"}
             </p>
@@ -179,16 +221,17 @@ const EducationModal = ({
   const sectionCard =
     "rounded-3xl border border-white/10 bg-white/[0.02] p-6 space-y-4";
 
-  return (
-    <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+  return ReactDOM.createPortal(
+    <motion.div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
       <motion.div
         variants={modalVariants}
         initial="hidden"
         animate="visible"
         exit="exit"
-        className="relative max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0f172a] p-8 shadow-2xl"
+        className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0f172a] p-8 shadow-2xl"
       >
         <button
+          type="button"
           onClick={handleClose}
           className="absolute right-5 top-5 rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
         >
@@ -196,7 +239,9 @@ const EducationModal = ({
         </button>
 
         <h2 className="mb-6 text-2xl font-bold text-white">
-          {editingEducationIndex !== null ? "Edit Education" : "Education Details"}
+          {editingEducationIndex !== null
+            ? "Edit Education"
+            : "Education Details"}
         </h2>
 
         <div className="space-y-8">
@@ -370,6 +415,7 @@ const EducationModal = ({
         <div className="mt-8 flex items-center justify-end gap-4 border-t border-white/10 pt-6">
           {editingEducationIndex !== null && (
             <button
+              type="button"
               onClick={handleDeleteCurrent}
               className="rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-500"
             >
@@ -378,6 +424,7 @@ const EducationModal = ({
           )}
 
           <button
+            type="button"
             onClick={handleClose}
             className="px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
           >
@@ -385,6 +432,7 @@ const EducationModal = ({
           </button>
 
           <button
+            type="button"
             onClick={handleSave}
             className="rounded-2xl bg-cyan-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
           >
@@ -392,7 +440,8 @@ const EducationModal = ({
           </button>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 };
 

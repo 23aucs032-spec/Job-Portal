@@ -12,40 +12,41 @@ const achievementOptions = [
   "Gold medalist",
   "Received scholarship",
   "All rounder",
-  "Other",
 ];
 
-const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) => {
+const AcademicAchievements = ({
+  modals,
+  closeModal,
+  onSave,
+  initialData = [],
+}) => {
   const [selectedAchievements, setSelectedAchievements] = useState([]);
   const [otherAchievement, setOtherAchievement] = useState("");
 
   useEffect(() => {
     if (modals?.accomplishments) {
       const normalized = Array.isArray(initialData)
-        ? initialData.map((item) => {
-            if (typeof item === "string") {
-              return {
-                title: item,
-                description: "",
-                year: "",
-              };
-            }
+        ? initialData
+            .map((item) => {
+              if (typeof item === "string") {
+                return {
+                  title: item,
+                  description: "",
+                  year: "",
+                };
+              }
 
-            return {
-              title: item?.title || "",
-              description: item?.description || "",
-              year: item?.year || "",
-            };
-          })
+              return {
+                title: item?.title || "",
+                description: item?.description || "",
+                year: item?.year || "",
+              };
+            })
+            .filter((item) => item.title.trim() !== "")
         : [];
 
       setSelectedAchievements(normalized);
-
-      const existingOther = normalized.find(
-        (item) => item.title && !achievementOptions.includes(item.title)
-      );
-
-      setOtherAchievement(existingOther?.title || "");
+      setOtherAchievement("");
     }
   }, [modals?.accomplishments, initialData]);
 
@@ -78,10 +79,6 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
     setSelectedAchievements((prev) =>
       prev.filter((item) => item.title !== achievement)
     );
-
-    if (achievement === "Other") {
-      setOtherAchievement("");
-    }
   };
 
   const updateAchievementField = (title, field, value) => {
@@ -97,10 +94,13 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
     if (!trimmed) return;
 
     const exists = selectedAchievements.some(
-      (item) => item.title.toLowerCase() === trimmed.toLowerCase()
+      (item) => item.title.trim().toLowerCase() === trimmed.toLowerCase()
     );
 
-    if (exists) return;
+    if (exists) {
+      setOtherAchievement("");
+      return;
+    }
 
     setSelectedAchievements((prev) => [
       ...prev,
@@ -110,6 +110,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
         year: "",
       },
     ]);
+
     setOtherAchievement("");
   };
 
@@ -142,7 +143,6 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
             transition={{ duration: 0.25 }}
             className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0f172a] p-8 shadow-2xl"
           >
-            {/* Close Button */}
             <button
               type="button"
               onClick={() => closeModal("accomplishments")}
@@ -160,13 +160,12 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
               to recruiters.
             </p>
 
-            {/* Selected Achievements */}
             <div className="mb-8">
               <label className="mb-3 block text-sm font-medium text-slate-300">
                 Selected achievements
               </label>
 
-              <div className="flex min-h-17.5 flex-wrap gap-3 rounded-2xl border border-white/10 bg-white/4 p-4">
+              <div className="flex min-h-17.5 flex-wrap gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                 {selectedAchievements.length > 0 ? (
                   selectedAchievements.map((item) => (
                     <span
@@ -191,7 +190,6 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
               </div>
             </div>
 
-            {/* Achievement Options */}
             <div className="mb-8">
               <label className="mb-3 block text-sm font-medium text-slate-300">
                 Add achievements
@@ -209,7 +207,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
                       className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
                         active
                           ? "border-cyan-500 bg-cyan-600 text-white"
-                          : "border-white/10 bg-white/4 text-slate-300 hover:bg-white/8"
+                          : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                       }`}
                     >
                       {!active && <Plus size={14} />}
@@ -220,7 +218,6 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
               </div>
             </div>
 
-            {/* Other Achievement */}
             <div className="mb-8">
               <label className="mb-3 block text-sm font-medium text-slate-300">
                 Add custom achievement
@@ -229,10 +226,10 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
               <div className="flex gap-3">
                 <input
                   type="text"
-                  value={otherAchievement}
+                  value={otherAchievement || ""}
                   onChange={(e) => setOtherAchievement(e.target.value)}
                   placeholder="Enter custom achievement"
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500 placeholder:text-slate-500"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500"
                 />
                 <button
                   type="button"
@@ -244,7 +241,6 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
               </div>
             </div>
 
-            {/* Details Section */}
             {selectedAchievements.length > 0 && (
               <div className="space-y-5">
                 <h3 className="text-lg font-semibold text-white">
@@ -254,7 +250,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
                 {selectedAchievements.map((item) => (
                   <div
                     key={item.title}
-                    className="rounded-2xl border border-white/10 bg-white/4 p-5"
+                    className="rounded-2xl border border-white/10 bg-white/5 p-5"
                   >
                     <p className="mb-4 text-base font-semibold text-cyan-300">
                       {item.title}
@@ -266,7 +262,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
                           Description
                         </label>
                         <textarea
-                          value={item.description}
+                          value={item.description || ""}
                           onChange={(e) =>
                             updateAchievementField(
                               item.title,
@@ -275,7 +271,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
                             )
                           }
                           placeholder="Describe this achievement"
-                          className="min-h-25 w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500 placeholder:text-slate-500"
+                          className="min-h-25 w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500"
                         />
                       </div>
 
@@ -285,7 +281,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
                         </label>
                         <input
                           type="text"
-                          value={item.year}
+                          value={item.year || ""}
                           onChange={(e) =>
                             updateAchievementField(
                               item.title,
@@ -294,7 +290,7 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
                             )
                           }
                           placeholder="e.g. 2025"
-                          className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-cyan-500 placeholder:text-slate-500"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500"
                         />
                       </div>
                     </div>
@@ -303,7 +299,6 @@ const AcademicAchievements = ({ modals, closeModal, onSave, initialData = [] }) 
               </div>
             )}
 
-            {/* Footer */}
             <div className="mt-10 flex items-center justify-end gap-4 border-t border-white/10 pt-6">
               <button
                 type="button"

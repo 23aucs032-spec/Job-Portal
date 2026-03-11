@@ -24,7 +24,6 @@ import JobPostingForm from "./pages/recruiter/JobPostingForm";
 import ManageJobs from "./pages/recruiter/ManageJobs";
 import EditJob from "./pages/recruiter/EditJob";
 import ApplicationViewer from "./pages/recruiter/ApplicantsView";
-import EmployerProfilePage from "./pages/Employer/EmployerProfilePage";
 import RegisterStep1 from "./pages/recruiter/RegisterStep1";
 import RegisterStep2 from "./pages/recruiter/RegisterStep2";
 import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
@@ -89,9 +88,6 @@ const App = () => {
         <Route element={<ProtectedRoute requireRole="employer" />}>
           <Route path="/employer/dashboard" element={<EmployerDashboard />} />
           <Route path="/manage-jobs" element={<ManageJobs />} />
-          <Route path="/applicants/:jobId" element={<ApplicationViewer />} />
-          <Route path="/employer/profile" element={<EmployerProfilePage />} />
-          <Route path="/company-profile" element={<EmployerProfilePage />} />
         </Route>
 
         {/* ================= RECRUITER ROUTES ================= */}

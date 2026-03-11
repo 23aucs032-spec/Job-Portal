@@ -44,7 +44,10 @@ const formatPostedDate = (value) => {
   if (diffDays <= 0) return "Posted today";
   if (diffDays === 1) return "Posted 1 day ago";
   if (diffDays < 7) return `Posted ${diffDays} days ago`;
-  if (diffDays < 30) return `Posted ${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? "s" : ""} ago`;
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `Posted ${weeks} week${weeks > 1 ? "s" : ""} ago`;
+  }
   return `Posted on ${formatDate(value)}`;
 };
 
@@ -74,19 +77,6 @@ const decodeTokenUserId = (token) => {
   } catch {
     return null;
   }
-};
-
-const getMatchScore = (skills = []) => {
-  if (!Array.isArray(skills) || skills.length === 0) return 72;
-
-  const count = skills.length;
-
-  if (count >= 10) return 95;
-  if (count >= 8) return 90;
-  if (count >= 6) return 85;
-  if (count >= 4) return 80;
-  if (count >= 2) return 75;
-  return 70;
 };
 
 const stripHtml = (html) => {
@@ -126,6 +116,8 @@ const JobDetails = () => {
       try {
         setLoading(true);
         setError(null);
+        setJob(null);
+        setApplied(false);
 
         const res = await fetch(`${API}/api/jobs/${id}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -134,7 +126,6 @@ const JobDetails = () => {
         const contentType = res.headers.get("content-type") || "";
 
         if (!contentType.includes("application/json")) {
-          const text = await res.text();
           throw new Error(`Invalid response from server (${res.status})`);
         }
 
@@ -148,11 +139,17 @@ const JobDetails = () => {
 
         if (token && Array.isArray(data.applicants) && data.applicants.length > 0) {
           const userId = decodeTokenUserId(token);
+
           if (userId) {
-            const applicantIds = data.applicants.map((item) =>
-              typeof item === "string" ? item : item?._id
-            );
-            if (applicantIds.includes(userId)) {
+            const applicantIds = data.applicants
+              .map((item) => {
+                if (typeof item === "string") return item;
+                if (item?._id) return String(item._id);
+                return null;
+              })
+              .filter(Boolean);
+
+            if (applicantIds.includes(String(userId))) {
               setApplied(true);
             }
           }
@@ -199,7 +196,10 @@ const JobDetails = () => {
 
   useEffect(() => {
     const fetchSaved = async () => {
-      if (!token) return;
+      if (!token) {
+        setSaved(false);
+        return;
+      }
 
       try {
         const res = await fetch(`${API}/api/saved-jobs`, {
@@ -217,7 +217,7 @@ const JobDetails = () => {
 
         setSaved(ids.includes(id));
       } catch {
-        // ignore
+        setSaved(false);
       }
     };
 
@@ -227,42 +227,50 @@ const JobDetails = () => {
   /* ================= APPLY ================= */
 
   const handleApply = async () => {
-  try {
-    if (!token) {
-      alert("You must login first!");
-      navigate("/login");
-      return;
+    try {
+      if (!token) {
+        alert("You must login first!");
+        navigate("/login");
+        return;
+      }
+
+      if (applied || applying) return;
+
+      setApplying(true);
+
+      const res = await fetch(`${API}/api/applications/apply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ jobId: id }),
+      });
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        throw new Error("Invalid response from server");
+      }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to apply");
+      }
+
+      setApplied(true);
+      setToast(data.message || "Applied successfully!");
+
+      setTimeout(() => {
+        navigate("/applied-jobs");
+      }, 1000);
+    } catch (err) {
+      alert(err.message || "Failed to apply");
+    } finally {
+      setApplying(false);
     }
-
-    setApplying(true);
-
-    const res = await fetch(`${API}/api/applications/apply`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ jobId: id }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Failed to apply");
-    }
-
-    setApplied(true);
-    setToast("Applied successfully!");
-
-    setTimeout(() => {
-      navigate("/applied-jobs");
-    }, 1000);
-  } catch (err) {
-    alert(err.message || "Failed to apply");
-  } finally {
-    setApplying(false);
-  }
-};
+  };
 
   /* ================= SAVE JOB ================= */
 
@@ -273,6 +281,11 @@ const JobDetails = () => {
       if (!token) {
         alert("Please login first");
         navigate("/login");
+        return;
+      }
+
+      if (!targetJob?._id) {
+        alert("Invalid job");
         return;
       }
 
@@ -289,6 +302,12 @@ const JobDetails = () => {
         }),
       });
 
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        throw new Error("Invalid response from server");
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -301,7 +320,7 @@ const JobDetails = () => {
       }
 
       if (targetJob._id === id) setSaved(true);
-      setToast("Job saved successfully");
+      setToast(data.message || "Job saved successfully");
     } catch (error) {
       alert(error.message || "Unable to save job");
     } finally {
@@ -705,12 +724,12 @@ const JobDetails = () => {
               <h3 className="text-xl font-bold text-white">Actions</h3>
               <div className="mt-5 flex flex-col gap-3">
                 <button
-  onClick={applied ? () => navigate("/applied-jobs") : handleApply}
-  disabled={applying}
-  className="rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
->
-  {applied ? "View Applied Jobs" : applying ? "Applying..." : "Apply Now"}
-</button>
+                  onClick={applied ? () => navigate("/applied-jobs") : handleApply}
+                  disabled={applying}
+                  className="rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {applied ? "View Applied Jobs" : applying ? "Applying..." : "Apply Now"}
+                </button>
 
                 <button
                   onClick={(e) => handleSaveJob(e, job)}

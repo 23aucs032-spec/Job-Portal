@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -46,7 +47,7 @@ const InternshipsModal = ({ isOpen, onClose, onSave, initialData }) => {
   }, [initialData, isOpen]);
 
   const handleChange = (field, value) => {
-    setInternship({ ...internship, [field]: value });
+    setInternship((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = () => {
@@ -68,11 +69,11 @@ const InternshipsModal = ({ isOpen, onClose, onSave, initialData }) => {
   const inputClass =
     "w-full rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-500";
 
-  return (
+  return ReactDOM.createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -85,6 +86,7 @@ const InternshipsModal = ({ isOpen, onClose, onSave, initialData }) => {
             className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-white/10 bg-[#0f172a] shadow-2xl"
           >
             <button
+              type="button"
               onClick={onClose}
               className="absolute right-5 top-5 rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
@@ -137,7 +139,7 @@ const InternshipsModal = ({ isOpen, onClose, onSave, initialData }) => {
                     onChange={(e) =>
                       handleChange("description", e.target.value)
                     }
-                    className={`${inputClass} min-h-32.5`}
+                    className={`${inputClass} min-h-[130px]`}
                   />
                 </div>
 
@@ -171,12 +173,14 @@ const InternshipsModal = ({ isOpen, onClose, onSave, initialData }) => {
 
             <div className="flex justify-end gap-4 border-t border-white/10 px-8 py-6">
               <button
+                type="button"
                 onClick={onClose}
                 className="px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSave}
                 className="rounded-2xl bg-cyan-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500"
               >
@@ -186,7 +190,8 @@ const InternshipsModal = ({ isOpen, onClose, onSave, initialData }) => {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
