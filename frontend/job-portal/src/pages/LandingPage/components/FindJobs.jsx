@@ -476,7 +476,7 @@ const FindJobs = () => {
                         variants={card}
                         whileHover={{ y: -4, scale: 1.01 }}
                         onClick={() => handleJobClick(job._id)}
-                        className="group cursor-pointer rounded-3xl border border-white/10 bg-gradient-to-br from-[#0f172a] to-[#111827] p-6 shadow-lg transition-all duration-300 hover:border-blue-500/40 hover:shadow-blue-500/10"
+                        className="group cursor-pointer rounded-3xl border border-white/10 bg-linear-to-br from-[#0f172a] to-[#111827] p-6 shadow-lg transition-all duration-300 hover:border-blue-500/40 hover:shadow-blue-500/10"
                       >
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                           {/* LEFT */}
@@ -591,7 +591,7 @@ const FindJobs = () => {
                           </div>
 
                           {/* RIGHT */}
-                          <div className="flex flex-row items-center justify-between gap-4 lg:w-[180px] lg:flex-col lg:items-end">
+                          <div className="flex flex-row items-center justify-between gap-4 lg:w-45 lg:flex-col lg:items-end">
                             <button
                               onClick={(e) => toggleSaveJob(e, job._id)}
                               className={`flex items-center gap-2 px-4 py-2 text-sm transition border rounded-xl ${

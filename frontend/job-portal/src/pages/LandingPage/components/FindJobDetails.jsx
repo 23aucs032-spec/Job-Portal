@@ -310,7 +310,7 @@ const FindJobDetails = () => {
             {/* HERO CARD */}
             <motion.div
               variants={card}
-              className="p-6 border shadow-lg rounded-3xl bg-gradient-to-br from-[#0f172a] to-[#111827] border-white/10"
+              className="p-6 border shadow-lg rounded-3xl bg-linear-to-br from-[#0f172a] to-[#111827] border-white/10"
             >
               <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
                 <div className="flex-1">

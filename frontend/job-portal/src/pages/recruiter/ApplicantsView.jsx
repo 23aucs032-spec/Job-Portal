@@ -311,7 +311,7 @@ const ApplicationViewer = () => {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="mb-8 rounded-3xl border border-white/10 bg-gradient-to-r from-[#0f172a] via-[#111827] to-[#0f172a] p-6 shadow-2xl"
+          className="mb-8 rounded-3xl border border-white/10 bg-linear-to-r from-[#0f172a] via-[#111827] to-[#0f172a] p-6 shadow-2xl"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -605,7 +605,7 @@ const InfoRow = ({ icon, label, value }) => {
         {icon}
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <p className="text-sm text-slate-300 break-words">{value}</p>
+      <p className="text-sm text-slate-300 wrap-break-word">{value}</p>
     </div>
   );
 };

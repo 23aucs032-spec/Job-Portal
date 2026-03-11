@@ -875,7 +875,7 @@ const PostJob = () => {
           initial={{ opacity: 0, y: 36 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="mb-8 rounded-3xl border border-white/10 bg-gradient-to-r from-[#0f172a] via-[#111827] to-[#0f172a] p-6 shadow-2xl"
+          className="mb-8 rounded-3xl border border-white/10 bg-linear-to-r from-[#0f172a] via-[#111827] to-[#0f172a] p-6 shadow-2xl"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -1521,7 +1521,7 @@ const PostJob = () => {
                   type="button"
                   onClick={handleSubmit}
                   disabled={posting}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-teal-500 px-6 py-3 font-semibold text-black transition hover:from-cyan-400 hover:to-teal-400 disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-teal-500 px-6 py-3 font-semibold text-black transition hover:from-cyan-400 hover:to-teal-400 disabled:opacity-60"
                 >
                   <CheckCircle2 size={18} />
                   {posting ? "Posting..." : "Post Job"}
@@ -1625,7 +1625,7 @@ function SnapshotRow({ icon, label, value }) {
       <div className="mt-0.5 text-cyan-300">{icon}</div>
       <div className="min-w-0">
         <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-        <div className="break-words text-slate-200">{value}</div>
+        <div className="wrap-break-word text-slate-200">{value}</div>
       </div>
     </div>
   );
@@ -1638,7 +1638,7 @@ function DetailCard({ icon, label, value }) {
         {icon}
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <p className="text-sm leading-6 break-words text-slate-300">{value}</p>
+      <p className="text-sm leading-6 wrap-break-word text-slate-300">{value}</p>
     </div>
   );
 }

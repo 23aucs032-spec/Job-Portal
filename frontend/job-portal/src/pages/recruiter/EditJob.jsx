@@ -450,7 +450,7 @@ const EditJob = () => {
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-gradient-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
+          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-linear-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -486,7 +486,7 @@ const EditJob = () => {
             animate={{ opacity: 1, y: 0 }}
             className="w-full p-6 border shadow-2xl bg-white/5 backdrop-blur-2xl rounded-3xl border-white/10 md:p-8"
           >
-            <h1 className="mb-8 text-3xl font-bold text-center text-transparent bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text">
+            <h1 className="mb-8 text-3xl font-bold text-center text-transparent bg-linear-to-r from-cyan-400 to-teal-400 bg-clip-text">
               Edit Job
             </h1>
 
@@ -731,7 +731,7 @@ const EditJob = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={saving}
-                className="w-full py-3 mt-6 font-bold text-black rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 disabled:opacity-60"
+                className="w-full py-3 mt-6 font-bold text-black rounded-xl bg-linear-to-r from-cyan-500 to-teal-500 disabled:opacity-60"
               >
                 <span className="inline-flex items-center gap-2">
                   <Save size={18} />
@@ -800,7 +800,7 @@ const SnapshotRow = ({ icon, label, value }) => {
       <div className="mt-0.5 text-cyan-300">{icon}</div>
       <div>
         <p className="text-xs text-slate-400">{label}</p>
-        <p className="text-sm text-white break-words">{value}</p>
+        <p className="text-sm text-white wrap-break-word">{value}</p>
       </div>
     </div>
   );

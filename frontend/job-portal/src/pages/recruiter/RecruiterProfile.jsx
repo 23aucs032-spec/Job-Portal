@@ -365,7 +365,7 @@ const RecruiterProfile = () => {
           initial={{ opacity: 0, y: 35 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-gradient-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
+          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-linear-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -691,7 +691,7 @@ const MiniOverviewRow = ({ icon, label, value }) => {
       <div className="mt-0.5 text-cyan-300">{icon}</div>
       <div>
         <p className="text-xs text-slate-400">{label}</p>
-        <p className="text-sm text-white break-words">{value}</p>
+        <p className="text-sm text-white wrap-break-word">{value}</p>
       </div>
     </div>
   );
@@ -704,7 +704,7 @@ const SummaryInfoCard = ({ icon, label, value }) => {
         {icon}
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <p className="text-sm text-slate-300 break-words">{value}</p>
+      <p className="text-sm text-slate-300 wrap-break-word">{value}</p>
     </div>
   );
 };

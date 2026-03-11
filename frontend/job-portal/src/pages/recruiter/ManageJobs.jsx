@@ -371,7 +371,7 @@ const ManageJobs = () => {
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-gradient-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
+          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-linear-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -456,7 +456,7 @@ const ManageJobs = () => {
                   exit={{ opacity: 0, y: 16 }}
                   transition={{ duration: 0.35, delay: index * 0.04 }}
                   whileHover={{ y: -4 }}
-                  className="relative overflow-hidden border shadow-2xl rounded-3xl border-white/10 bg-gradient-to-br from-[#0f172a] to-[#111827]"
+                  className="relative overflow-hidden border shadow-2xl rounded-3xl border-white/10 bg-linear-to-br from-[#0f172a] to-[#111827]"
                 >
                   <div className="p-6 md:p-7">
                     <div className="flex items-start justify-between gap-4">
@@ -581,7 +581,7 @@ const ManageJobs = () => {
                     </div>
                   </div>
 
-                  <div className="h-1 bg-gradient-to-r from-cyan-400 to-teal-400" />
+                  <div className="h-1 bg-linear-to-r from-cyan-400 to-teal-400" />
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -870,7 +870,7 @@ const SummaryTile = ({ icon, label, value, color = "cyan" }) => {
         {icon}
       </div>
       <p className="text-xs text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-white break-words">
+      <p className="mt-1 text-sm font-semibold text-white wrap-break-word">
         {value || "-"}
       </p>
     </div>
@@ -881,7 +881,7 @@ const ModalInfo = ({ label, value }) => {
   return (
     <div className="p-4 border rounded-2xl border-white/10 bg-white/5">
       <p className="mb-1 text-sm text-slate-400">{label}</p>
-      <p className="font-medium text-white break-words">{value || "-"}</p>
+      <p className="font-medium text-white wrap-break-word">{value || "-"}</p>
     </div>
   );
 };
@@ -903,7 +903,7 @@ const DetailCard = ({ icon, label, value }) => {
         {icon}
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <p className="text-sm leading-6 break-words text-slate-300">{value}</p>
+      <p className="text-sm leading-6 wrap-break-word text-slate-300">{value}</p>
     </div>
   );
 };

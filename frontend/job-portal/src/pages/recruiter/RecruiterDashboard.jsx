@@ -280,7 +280,7 @@ const RecruiterDashboard = () => {
           initial={{ opacity: 0, y: -18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-gradient-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
+          className="p-6 mb-8 border shadow-2xl rounded-3xl bg-linear-to-r from-[#0f172a] via-[#111827] to-[#0f172a] border-white/10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -528,7 +528,7 @@ const RecruiterDashboard = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, delay: index * 0.05 }}
                     whileHover={{ y: -4 }}
-                    className="overflow-hidden border shadow-xl rounded-3xl bg-gradient-to-br from-[#0f172a] to-[#111827] border-white/10 hover:border-cyan-400/30"
+                    className="overflow-hidden border shadow-xl rounded-3xl bg-linear-to-br from-[#0f172a] to-[#111827] border-white/10 hover:border-cyan-400/30"
                   >
                     <div className="p-6">
                       <div className="flex items-start justify-between gap-4">
@@ -638,7 +638,7 @@ const RecruiterDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="h-1 bg-gradient-to-r from-cyan-400 via-sky-400 to-teal-400" />
+                    <div className="h-1 bg-linear-to-r from-cyan-400 via-sky-400 to-teal-400" />
                   </motion.div>
                 ))}
               </div>
@@ -708,7 +708,7 @@ const DetailCard = ({ icon, label, value }) => {
         {icon}
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <p className="text-sm leading-6 text-slate-300 break-words">
+      <p className="text-sm leading-6 text-slate-300 wrap-break-word">
         {value}
       </p>
     </div>

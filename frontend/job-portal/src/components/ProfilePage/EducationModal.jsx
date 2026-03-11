@@ -222,7 +222,7 @@ const EducationModal = ({
     "rounded-3xl border border-white/10 bg-white/[0.02] p-6 space-y-4";
 
   return ReactDOM.createPortal(
-    <motion.div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+    <motion.div className="fixed inset-0 z-200 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
       <motion.div
         variants={modalVariants}
         initial="hidden"
