@@ -20,6 +20,7 @@ router.get("/salary-count", jobController.getSalaryCounts);
    STATIC / PUBLIC ROUTES
 =============================== */
 router.get("/latest", jobController.getLatestJobs);
+router.get("/search", jobController.searchJobs);
 router.get("/similar/:id", jobController.getSimilarJobs);
 router.get("/my/jobs", authMiddleware, jobController.getMyJobs);
 

@@ -224,6 +224,58 @@ exports.getAllJobs = async (req, res) => {
 };
 
 /* ===============================
+   SEARCH JOBS
+=============================== */
+exports.searchJobs = async (req, res) => {
+  try {
+    const keyword = cleanString(req.query.keyword);
+    const location = cleanString(req.query.location);
+    const experience = cleanString(req.query.experience);
+
+    const query = {};
+
+    if (keyword) {
+      query.$or = [
+        { title: { $regex: keyword, $options: "i" } },
+        { companyName: { $regex: keyword, $options: "i" } },
+        { consultancyName: { $regex: keyword, $options: "i" } },
+        { department: { $regex: keyword, $options: "i" } },
+        { roleCategory: { $regex: keyword, $options: "i" } },
+        { industry: { $regex: keyword, $options: "i" } },
+        { location: { $regex: keyword, $options: "i" } },
+        { workMode: { $regex: keyword, $options: "i" } },
+        { education: { $regex: keyword, $options: "i" } },
+        { jobDescription: { $regex: keyword, $options: "i" } },
+        { skills: { $elemMatch: { $regex: keyword, $options: "i" } } },
+      ];
+    }
+
+    if (location) {
+      query.location = { $regex: location, $options: "i" };
+    }
+
+    if (experience !== "") {
+      const expNum = Number(experience);
+
+      if (!Number.isNaN(expNum)) {
+        query.minExp = { $lte: expNum };
+        query.maxExp = { $gte: expNum };
+      }
+    }
+
+    const jobs = await Job.find(query).sort({ createdAt: -1 });
+
+    res.status(200).json(jobs);
+  } catch (err) {
+    console.error("searchJobs error:", err);
+    res.status(500).json({
+      message: "Failed to search jobs",
+      error: err.message,
+    });
+  }
+};
+
+/* ===============================
    GET JOB BY ID
 =============================== */
 exports.getJobById = async (req, res) => {
@@ -401,6 +453,18 @@ exports.createJob = async (req, res) => {
       return res.status(400).json({ message: "Work mode is required" });
     }
 
+    if (payload.maxExp < payload.minExp) {
+      return res.status(400).json({
+        message: "Maximum experience must be greater than or equal to minimum experience",
+      });
+    }
+
+    if (payload.maxSalary < payload.minSalary) {
+      return res.status(400).json({
+        message: "Maximum salary must be greater than or equal to minimum salary",
+      });
+    }
+
     const job = await Job.create(payload);
 
     res.status(201).json({
@@ -438,6 +502,18 @@ exports.updateJob = async (req, res) => {
     }
 
     const payload = buildJobPayload(req.body, existingJob.recruiter);
+
+    if (payload.maxExp < payload.minExp) {
+      return res.status(400).json({
+        message: "Maximum experience must be greater than or equal to minimum experience",
+      });
+    }
+
+    if (payload.maxSalary < payload.minSalary) {
+      return res.status(400).json({
+        message: "Maximum salary must be greater than or equal to minimum salary",
+      });
+    }
 
     const updatedJob = await Job.findByIdAndUpdate(req.params.id, payload, {
       new: true,

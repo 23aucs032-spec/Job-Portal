@@ -1,11 +1,24 @@
 const express = require("express");
 const router = express.Router();
+const nodemailer = require("nodemailer");
 const Profile = require("../models/Profile");
 const upload = require("../middleware/upload");
 const auth = require("../middleware/authMiddleware");
 
 /* ======================
-   HELPER FUNCTION
+   MAIL TRANSPORTER
+====================== */
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+/* ======================
+   HELPER FUNCTIONS
 ====================== */
 
 const getOrCreateProfile = async (userId) => {
@@ -14,6 +27,10 @@ const getOrCreateProfile = async (userId) => {
     profile = await Profile.create({ user: userId });
   }
   return profile;
+};
+
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 /* ======================
@@ -25,7 +42,7 @@ router.get("/me", auth, async (req, res) => {
     const profile = await getOrCreateProfile(req.user.id);
     res.json(profile);
   } catch (error) {
-    console.error(error);
+    console.error("GET /me error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -36,10 +53,8 @@ router.get("/me", auth, async (req, res) => {
 
 router.post("/save", auth, async (req, res) => {
   try {
-
     const updateData = { ...req.body };
 
-    /* 🔥 Fix achievements if sent as string array */
     if (Array.isArray(updateData.achievements)) {
       updateData.achievements = updateData.achievements.map((item) =>
         typeof item === "string"
@@ -52,7 +67,7 @@ router.post("/save", auth, async (req, res) => {
       { user: req.user.id },
       { $set: updateData },
       {
-        returnDocument: "after",   // ✅ fix deprecation warning
+        new: true,
         upsert: true,
         setDefaultsOnInsert: true,
       }
@@ -60,7 +75,7 @@ router.post("/save", auth, async (req, res) => {
 
     res.json(profile);
   } catch (error) {
-    console.error(error);
+    console.error("POST /save error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -74,11 +89,97 @@ router.put("/basic", auth, async (req, res) => {
     const profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       { $set: req.body },
-      { new: true }
+      { new: true, upsert: true }
     );
     res.json(profile);
   } catch (error) {
+    console.error("PUT /basic error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ======================
+   SEND EMAIL OTP
+====================== */
+
+router.post("/send-email-otp", auth, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const profile = await getOrCreateProfile(req.user.id);
+    const otp = generateOtp();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    profile.emailOtp = otp;
+    profile.emailOtpExpires = otpExpiry;
+    await profile.save();
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your Email OTP Verification Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Email Verification</h2>
+          <p>Your OTP for email verification is:</p>
+          <h1 style="letter-spacing: 4px;">${otp}</h1>
+          <p>This OTP is valid for 10 minutes.</p>
+        </div>
+      `,
+    });
+
+    res.json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("POST /send-email-otp error:", error);
+    res.status(500).json({ message: "Failed to send OTP" });
+  }
+});
+
+/* ======================
+   VERIFY EMAIL OTP
+====================== */
+
+router.post("/verify-email-otp", auth, async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const profile = await getOrCreateProfile(req.user.id);
+
+    if (!profile.emailOtp || !profile.emailOtpExpires) {
+      return res.status(400).json({ message: "No OTP found. Please request OTP first" });
+    }
+
+    if (new Date() > new Date(profile.emailOtpExpires)) {
+      return res.status(400).json({ message: "OTP expired. Please request a new OTP" });
+    }
+
+    if (profile.emailOtp !== otp.toString().trim()) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    profile.email = email;
+    profile.emailVerified = true;
+    profile.emailOtp = "";
+    profile.emailOtpExpires = null;
+
+    await profile.save();
+
+    res.json({
+      message: "Email verified successfully",
+      email: profile.email,
+      emailVerified: true,
+    });
+  } catch (error) {
+    console.error("POST /verify-email-otp error:", error);
+    res.status(500).json({ message: "OTP verification failed" });
   }
 });
 
@@ -93,6 +194,7 @@ router.put("/languages", auth, async (req, res) => {
     await profile.save();
     res.json(profile.languages);
   } catch (error) {
+    console.error("PUT /languages error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -108,7 +210,7 @@ router.post("/education", auth, async (req, res) => {
     await profile.save();
     res.json(profile.education);
   } catch (error) {
-    console.error(error);
+    console.error("POST /education error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -128,6 +230,7 @@ router.delete("/education/:id", auth, async (req, res) => {
     await profile.save();
     res.json(profile.education);
   } catch (error) {
+    console.error("DELETE /education/:id error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -140,13 +243,14 @@ router.post("/skills", auth, async (req, res) => {
   try {
     const profile = await getOrCreateProfile(req.user.id);
 
-    if (!profile.skills.includes(req.body.skill)) {
+    if (req.body.skill && !profile.skills.includes(req.body.skill)) {
       profile.skills.push(req.body.skill);
       await profile.save();
     }
 
     res.json(profile.skills);
   } catch (error) {
+    console.error("POST /skills error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -166,6 +270,7 @@ router.delete("/skills/:skill", auth, async (req, res) => {
     await profile.save();
     res.json(profile.skills);
   } catch (error) {
+    console.error("DELETE /skills/:skill error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -181,6 +286,7 @@ router.post("/internships", auth, async (req, res) => {
     await profile.save();
     res.json(profile.internships);
   } catch (error) {
+    console.error("POST /internships error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -196,6 +302,7 @@ router.post("/projects", auth, async (req, res) => {
     await profile.save();
     res.json(profile.projects);
   } catch (error) {
+    console.error("POST /projects error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -211,6 +318,7 @@ router.post("/employment", auth, async (req, res) => {
     await profile.save();
     res.json(profile.employments);
   } catch (error) {
+    console.error("POST /employment error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -226,6 +334,7 @@ router.post("/exams", auth, async (req, res) => {
     await profile.save();
     res.json(profile.competitiveExams);
   } catch (error) {
+    console.error("POST /exams error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -247,6 +356,7 @@ router.post("/achievements", auth, async (req, res) => {
     await profile.save();
     res.json(profile.achievements);
   } catch (error) {
+    console.error("POST /achievements error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -260,17 +370,23 @@ router.put("/summary", auth, async (req, res) => {
     const profile = await Profile.findOneAndUpdate(
       { user: req.user.id },
       { profileSummary: req.body.profileSummary },
-      { new: true }
+      { new: true, upsert: true }
     );
+
     res.json(profile.profileSummary);
   } catch (error) {
+    console.error("PUT /summary error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
+/* ======================
+   UPLOAD PROFILE IMAGE
+====================== */
+
 router.post(
   "/upload-profile-image",
-  auth,                     // ✅ ADD THIS
+  auth,
   upload.single("image"),
   async (req, res) => {
     try {
@@ -278,7 +394,7 @@ router.post(
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const profile = await getOrCreateProfile(req.user.id);  // ✅ safer
+      const profile = await getOrCreateProfile(req.user.id);
 
       profile.profileImage = {
         url: `/uploads/${req.file.filename}`,
@@ -287,39 +403,61 @@ router.post(
       await profile.save();
 
       res.json(profile.profileImage);
-
     } catch (err) {
-      console.error("Image Upload Error:", err);  // ✅ show real error
+      console.error("Image Upload Error:", err);
       res.status(500).json({ message: "Upload failed" });
     }
   }
 );
 
+/* ======================
+   UPLOAD RESUME
+====================== */
+
 router.post(
   "/upload-resume",
-  auth,                      // ✅ ADD THIS
+  auth,
   upload.single("resume"),
   async (req, res) => {
     try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized user" });
+      }
+
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const profile = await getOrCreateProfile(req.user.id);  // ✅ safer
-
-      profile.resume = {
-        name: req.file.originalname,
+      const resumeData = {
+        name: req.file.originalname || "",
         url: `/uploads/${req.file.filename}`,
+        public_id: "",
         uploadedAt: new Date(),
       };
 
-      await profile.save();
+      const profile = await Profile.findOneAndUpdate(
+        { user: req.user.id },
+        { $set: { resume: resumeData } },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      );
 
-      res.json(profile.resume);
+      if (!profile || !profile.resume || !profile.resume.url) {
+        return res
+          .status(500)
+          .json({ message: "Resume uploaded but not saved in database" });
+      }
 
+      return res.status(200).json({
+        message: "Resume uploaded successfully",
+        resume: profile.resume,
+      });
     } catch (err) {
       console.error("Resume Upload Error:", err);
-      res.status(500).json({ message: "Resume upload failed" });
+      return res.status(500).json({ message: "Resume upload failed" });
     }
   }
 );

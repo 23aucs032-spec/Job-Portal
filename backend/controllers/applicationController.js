@@ -1,7 +1,20 @@
 const Application = require("../models/Application");
 const Job = require("../models/Job");
+const Profile = require("../models/Profile");
+const nodemailer = require("nodemailer");
+
+/* ================= MAIL CONFIG ================= */
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 /* ================= APPLY JOB ================= */
+
 exports.applyJob = async (req, res) => {
   try {
     const { jobId } = req.body;
@@ -37,11 +50,15 @@ exports.applyJob = async (req, res) => {
       });
     }
 
+    /* ===== CREATE APPLICATION ===== */
+
     const application = await Application.create({
       job: jobId,
       applicant: req.user.id,
       status: "Applied",
     });
+
+    /* ===== UPDATE JOB APPLICANTS ===== */
 
     if (!Array.isArray(job.applicants)) {
       job.applicants = [];
@@ -56,12 +73,55 @@ exports.applyJob = async (req, res) => {
       await job.save();
     }
 
+    /* ===== SEND EMAIL NOTIFICATION ===== */
+
+    const profile = await Profile.findOne({ user: req.user.id });
+
+    if (profile?.email) {
+      const emailHtml = `
+      <div style="font-family: Arial; padding:20px;">
+        <h2 style="color:#0f766e;">Job Application Confirmation</h2>
+
+        <p>Hello <strong>${profile.name || "Candidate"}</strong>,</p>
+
+        <p>You have successfully applied for the following job:</p>
+
+        <div style="border:1px solid #ddd; padding:15px; border-radius:10px; margin-top:10px;">
+          <p><strong>Job Title:</strong> ${job.title}</p>
+          <p><strong>Company:</strong> ${job.companyName || job.consultancyName || "N/A"}</p>
+          <p><strong>Location:</strong> ${job.location || "N/A"}</p>
+          <p><strong>Salary:</strong> ₹${job.minSalary ?? 0} - ₹${job.maxSalary ?? 0} LPA</p>
+          <p><strong>Experience:</strong> ${job.minExp ?? 0} - ${job.maxExp ?? 0} years</p>
+          <p><strong>Work Mode:</strong> ${job.workMode || "N/A"}</p>
+          <p><strong>Status:</strong> <span style="color:green;font-weight:bold;">Applied</span></p>
+        </div>
+
+        <p style="margin-top:15px;">
+          You can track the application status from your dashboard.
+        </p>
+
+        <p style="margin-top:20px;">
+          Regards,<br/>
+          <strong>Job Portal Team</strong>
+        </p>
+      </div>
+      `;
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: profile.email,
+        subject: `Application Submitted - ${job.title}`,
+        html: emailHtml,
+      });
+    }
+
     return res.status(201).json({
       message: "Applied successfully",
       application,
     });
   } catch (error) {
     console.error("applyJob error:", error);
+
     return res.status(500).json({
       message: "Failed to apply for job",
       error: error.message,
@@ -70,6 +130,7 @@ exports.applyJob = async (req, res) => {
 };
 
 /* ================= GET MY APPLIED JOBS ================= */
+
 exports.getMyAppliedJobs = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
@@ -90,37 +151,13 @@ exports.getMyAppliedJobs = async (req, res) => {
         applicationId: application._id,
         appliedAt: application.appliedAt,
         status: application.status,
-        _id: application.job._id,
-        title: application.job.title || "",
-        companyName: application.job.companyName || "",
-        consultancyName: application.job.consultancyName || "",
-        companyLogo: application.job.companyLogo || "",
-        location: application.job.location || "",
-        minExp: application.job.minExp ?? 0,
-        maxExp: application.job.maxExp ?? 0,
-        minSalary: application.job.minSalary ?? 0,
-        maxSalary: application.job.maxSalary ?? 0,
-        skills: Array.isArray(application.job.skills)
-          ? application.job.skills
-          : [],
-        workMode: application.job.workMode || "",
-        department: application.job.department || "",
-        roleCategory: application.job.roleCategory || "",
-        education: application.job.education || "",
-        industry: application.job.industry || "",
-        companyType: application.job.companyType || "",
-        contactEmail: application.job.contactEmail || "",
-        jobDescription: application.job.jobDescription || "",
-        responsibilities: Array.isArray(application.job.responsibilities)
-          ? application.job.responsibilities
-          : [],
-        createdAt: application.job.createdAt,
-        updatedAt: application.job.updatedAt,
+        ...application.job.toObject(),
       }));
 
     return res.status(200).json(appliedJobs);
   } catch (error) {
     console.error("getMyAppliedJobs error:", error);
+
     return res.status(500).json({
       message: "Failed to fetch applied jobs",
       error: error.message,
@@ -129,6 +166,7 @@ exports.getMyAppliedJobs = async (req, res) => {
 };
 
 /* ================= GET APPLICANTS BY JOB ================= */
+
 exports.getApplicantsByJob = async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -140,6 +178,7 @@ exports.getApplicantsByJob = async (req, res) => {
     return res.status(200).json(applications);
   } catch (error) {
     console.error("getApplicantsByJob error:", error);
+
     return res.status(500).json({
       message: "Failed to fetch applicants",
       error: error.message,
