@@ -24,6 +24,7 @@ import JobPostingForm from "./pages/recruiter/JobPostingForm";
 import ManageJobs from "./pages/recruiter/ManageJobs";
 import EditJob from "./pages/recruiter/EditJob";
 import ApplicationViewer from "./pages/recruiter/ApplicantsView";
+import AllApplicants from "./pages/recruiter/AllApplicants";
 import RegisterStep1 from "./pages/recruiter/RegisterStep1";
 import RegisterStep2 from "./pages/recruiter/RegisterStep2";
 import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
@@ -90,14 +91,24 @@ const App = () => {
           <Route path="/manage-jobs" element={<ManageJobs />} />
         </Route>
 
-        {/* ================= RECRUITER ROUTES ================= */}
+        {/* ================= RECRUITER PUBLIC ROUTES ================= */}
         <Route path="/recruiter/login" element={<RecruiterLogin />} />
         <Route path="/recruiter/register" element={<RegisterStep1 />} />
         <Route path="/recruiter/register-step2" element={<RegisterStep2 />} />
-        <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
-        <Route path="/recruiter/profile" element={<RecruiterProfile />} />
-        <Route path="/post-job" element={<JobPostingForm />} />
-        <Route path="/edit-job/:id" element={<EditJob />} />
+
+        {/* ================= RECRUITER PROTECTED ROUTES ================= */}
+        <Route element={<ProtectedRoute requireRole="recruiter" />}>
+          <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+          <Route path="/recruiter/profile" element={<RecruiterProfile />} />
+          <Route path="/post-job" element={<JobPostingForm />} />
+          <Route path="/edit-job/:id" element={<EditJob />} />
+          <Route path="/manage-jobs" element={<ManageJobs />} />
+          <Route path="/applicants/:jobId" element={<ApplicationViewer />} />
+          <Route
+            path="/applicants/:jobId/all"
+            element={<AllApplicants />}
+          />
+        </Route>
 
         {/* ================= FALLBACK ROUTE ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -567,48 +567,6 @@ exports.deleteJob = async (req, res) => {
 };
 
 /* ===============================
-   APPLY JOB
-=============================== */
-exports.applyJob = async (req, res) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: "Invalid job id" });
-    }
-
-    const job = await Job.findById(req.params.id);
-
-    if (!job) {
-      return res.status(404).json({ message: "Job not found" });
-    }
-
-    if (!Array.isArray(job.applicants)) {
-      job.applicants = [];
-    }
-
-    const alreadyApplied = job.applicants.some(
-      (applicantId) => applicantId.toString() === req.user.id
-    );
-
-    if (alreadyApplied) {
-      return res
-        .status(400)
-        .json({ message: "You have already applied for this job" });
-    }
-
-    job.applicants.push(req.user.id);
-    await job.save();
-
-    res.status(200).json({ message: "Applied successfully", job });
-  } catch (err) {
-    console.error("applyJob error:", err);
-    res.status(500).json({
-      message: "Failed to apply for job",
-      error: err.message,
-    });
-  }
-};
-
-/* ===============================
    GET SIMILAR JOBS
 =============================== */
 exports.getSimilarJobs = async (req, res) => {

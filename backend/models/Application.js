@@ -21,6 +21,16 @@ const applicationSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    screeningScore: {
+      type: Number,
+      default: 0,
+    },
+    screeningResult: {
+      type: String,
+      enum: ["Selected", "Processing", "Rejected", "Not Screened"],
+      default: "Not Screened",
+    },
   },
   { timestamps: true }
 );

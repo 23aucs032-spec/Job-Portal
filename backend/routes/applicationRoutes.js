@@ -18,4 +18,16 @@ router.get(
   applicationController.getApplicantsByJob
 );
 
+router.get(
+  "/job/:jobId/all-applicants",
+  authMiddleware,
+  applicationController.getAllApplicantsByJob
+);
+
+router.put(
+  "/:applicationId/status",
+  authMiddleware,
+  applicationController.updateApplicationStatus
+);
+
 module.exports = router;

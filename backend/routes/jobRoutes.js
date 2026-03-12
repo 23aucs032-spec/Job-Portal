@@ -42,7 +42,6 @@ router.post("/filter", jobController.filterJobs);
 router.post("/", authMiddleware, jobController.createJob);
 router.put("/:id", authMiddleware, jobController.updateJob);
 router.delete("/:id", authMiddleware, jobController.deleteJob);
-router.post("/:id/apply", authMiddleware, jobController.applyJob);
 
 /* ===============================
    DYNAMIC ROUTE LAST
